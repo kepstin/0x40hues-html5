@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>0x40 Hues of HTML5</title>
+    <script type="text/javascript">
+window.huesConfig = {
+  "respack": "0x40 Hues 5.0 Defaults",
+  "defaultSong": 18,
+  "autoPlay": true
+};
+    </script>
+    <!-- A couple of polyfills for cool new features -->
+    <script type="text/javascript" src="es6-promise-2.1.1.js"></script>
+    <script type="text/javascript" src="fetch-0.8.1.js"></script>
+    <style type="text/css">
+@font-face {
+  font-family: 'PetMe64Web';
+  font-style: normal;
+  font-weight: normal;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  src: local("PetMe64Web");
+  src: local('Pet Me 64'), local('Pet Me 64'), url("PetMe64.woff") format('woff');
+}
+body {
+  font-family: 'PetMe64Web';
+  font-size: 8px;
+}
+pre {
+  font-family: 'PetMe64Web';
+  overflow: hidden;
+}
+h1, h2, h3, h4 {
+  font-weight: normal;
+}
+h1, h2 { font-size: 16px; }
+h3, h4 { font-size: 8px; }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript" src="hues-ui.js"></script>
+    <script type="text/javascript" src="hues.js"></script>
+  </body>
+</html>
