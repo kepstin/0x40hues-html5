@@ -94,8 +94,30 @@
     setupStatusSong(statusDiv);
     setupStatusBeats(statusDiv);
 
-    return Promise.resolve(statusDiv);
+    return Promise.resolve(rootElement);
   }
+
+  var setupCanvas = function(rootElement) {
+    var canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.right = "0";
+    canvas.style.bottom = "0";
+    canvas.width = rootElement.clientWidth;
+    canvas.height = rootElement.clientHeight;
+    rootElement.appendChild(canvas);
+
+    var ctx = canvas.getContext("2d");
+    var updateHue = function(hue) {
+      ctx.fillStyle = hue["value"];
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+    updateHue(Hues.getCurrentHue());
+    Hues.addEventListener("huechange", updateHue);
+
+    return Promise.resolve(rootElement);
+  };
 
   var setupKeyHandlers = function(rootElement) {
     /* Even though we have the root element, keys are going to be installed
@@ -115,12 +137,9 @@
   }
   
   var initialize = function() {
-    var rootElement = setupRootElement();
-    var components = [];
-
-    components.push(rootElement.then(setupStatusArea));
-
-    Promise.all(components)
+    return setupRootElement()
+    .then(setupCanvas)
+    .then(setupStatusArea)
     .then(Hues.loadDefaultRespack)
     .then(setupKeyHandlers)
     .then(function() {
