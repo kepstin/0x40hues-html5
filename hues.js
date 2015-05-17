@@ -628,7 +628,11 @@
   Hues["getCurrentHue"] = getCurrentHue;
 
   var randomHue = function() {
-    currentHueIndex = Math.floor(Math.random() * hues.length);
+    var newHueIndex = Math.floor(Math.random() * (hues.length - 1));
+    if (newHueIndex >= currentHueIndex) {
+      newHueIndex += 1;
+    }
+    currentHueIndex = newHueIndex;
     return currentHueIndex;
   }
   randomHue();
