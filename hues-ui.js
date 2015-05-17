@@ -44,6 +44,62 @@
     Hues.addEventListener("automodechange", updateModeField);
   }
 
+  var setupStatusBeatNum = function(statusDiv) {
+    var beatDiv = document.createElement("div");
+    statusDiv.appendChild(beatDiv);
+    var beatLabel = document.createElement("span");
+    beatLabel.textContent = "B=$0x";
+    beatDiv.appendChild(beatLabel);
+    var beatField = document.createElement("span");
+    beatField.textContent = "00";
+    beatDiv.appendChild(beatField);
+
+    var updateBeatField = function(beat) {
+      var beatNum = "0";
+      if (beat["buildup"] !== null) {
+        beatNum = beat["buildup"].toString(16);
+      } else if (beat["loop"] !== null) {
+        beatNum = beat["loop"].toString(16);
+      }
+      if (beatNum.length < 2) {
+        beatNum = "0" + beatNum;
+      }
+      beatField.textContent = beatNum.toUpperCase();
+    };
+    Hues.addEventListener("beat", updateBeatField);
+  };
+
+  var setupStatusHue = function(statusDiv) {
+    var hueDiv = document.createElement("div");
+    statusDiv.appendChild(hueDiv);
+    var hueLabel = document.createElement("span");
+    hueLabel.textContent = "C=$0x";
+    hueDiv.appendChild(hueLabel);
+    var hueField = document.createElement("span");
+    hueDiv.appendChild(hueField);
+
+    var updateHueField = function(hueInfo) {
+      var hueNum = hueInfo["index"].toString(16);
+      if (hueNum.length < 2) {
+        hueNum = "0" + hueNum;
+      }
+      hueField.textContent = hueNum.toUpperCase();
+    };
+    updateHueField(Hues.getCurrentHue());
+    Hues.addEventListener("huechange", updateHueField);
+  };
+
+  var setupStatusHueName = function(statusDiv) {
+    var hueField = document.createElement("div");
+    statusDiv.appendChild(hueField);
+
+    var updateHueField = function(hueInfo) {
+      hueField.textContent = hueInfo["hue"]["name"].toUpperCase();
+    }
+    updateHueField(Hues.getCurrentHue());
+    Hues.addEventListener("huechange", updateHueField);
+  };
+
   var setupStatusSong = function(statusDiv) {
     var songField = document.createElement("div");
     statusDiv.appendChild(songField);
@@ -70,16 +126,11 @@
     var beatsField = document.createElement("span");
     beatsDiv.appendChild(beatsField);
 
-    var updateBeats = function() {
+    var updateBeats = function(beat) {
       var beats = Hues.getBeatString();
-      if (beats) {
-        beatsField.textContent = beats;
-      } else {
-        beatsField.textContent = "";
-      }
-      window.requestAnimationFrame(updateBeats);
+      beatsField.textContent = beats;
     }
-    window.requestAnimationFrame(updateBeats);
+    Hues.addEventListener("beat", updateBeats);
   }
 
   var setupStatusArea = function(rootElement) {
@@ -91,6 +142,9 @@
     rootElement.appendChild(statusDiv);
 
     setupStatusMode(statusDiv);
+    setupStatusBeatNum(statusDiv);
+    setupStatusHue(statusDiv);
+    setupStatusHueName(statusDiv);
     setupStatusSong(statusDiv);
     setupStatusBeats(statusDiv);
 
@@ -109,8 +163,8 @@
     rootElement.appendChild(canvas);
 
     var ctx = canvas.getContext("2d");
-    var updateHue = function(hue) {
-      ctx.fillStyle = hue["value"];
+    var updateHue = function(hueInfo) {
+      ctx.fillStyle = hueInfo["hue"]["value"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
     updateHue(Hues.getCurrentHue());

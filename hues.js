@@ -107,7 +107,7 @@
   var currentLoopBuffer = null;
   var currentLoopStartTime = null;
   var currentBeatDuration = null;
-  var currentHue = {name: "White", value: "#EDEDED"};
+  var currentHueIndex = null;
   var currentBeat = {buildup: null, loop: null};
 
   var gainNode = audioCtx.createGain();
@@ -578,6 +578,8 @@
       currentBuildupStartTime = buildupStart;
       currentLoopStartTime = loopStart;
 
+      startBeatAnalysis();
+
       return song;
     });
 
@@ -621,43 +623,108 @@
   Hues["getCurrentSong"] = getCurrentSong;
 
   var getCurrentHue = function() {
-    return currentHue;
+    return {"index": currentHueIndex, "hue": hues[currentHueIndex]};
   };
   Hues["getCurrentHue"] = getCurrentHue;
 
   var randomHue = function() {
-    currentHue = hues[Math.floor(Math.random() * hues.length)];
-    return currentHue;
+    currentHueIndex = Math.floor(Math.random() * hues.length);
+    return currentHueIndex;
   }
   randomHue();
 
-  var getBeatString = function() {
+  var doBeatEffect = function(beatChar) {
+    switch (beatChar) {
+    case '-':
+      /* Change colour only */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case 'x':
+      /* "snare"? colour plus blur */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case 'o':
+      /* "kick"? colour plus blur */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    }
+  };
+
+  var beatAnalyze = function() {
     if (!currentLoopBuffer) {
-      return null;
+      console.log("Stopping beat analysis");
+      currentBeat = { "buildup": null, "loop": null };
+      callEventListeners("beat", currentBeat);
+      return;
     }
 
+    var time = audioCtx.currentTime;
+    var beat = null;
+    var beatChar = null;
+
+    if (typeof(currentSong["buildupRhythm"]) !== "undefined" &&
+        time < currentLoopStartTime) {
+      /* In the buildup */
+      beat = {
+        "buildup": Math.floor((time - currentBuildupStartTime) /
+              currentBeatDuration),
+        "loop": null
+      };
+      beatChar = currentSong["buildupRhythm"].charAt(beat["buildup"]);
+    } else if (time >= currentLoopStartTime) {
+      beat = {
+        "buildup": null,
+        "loop": Math.floor(
+              (time - currentLoopStartTime) % currentLoopBuffer.duration /
+                currentBeatDuration)
+      };
+      beatChar = currentSong["rhythm"].charAt(beat["loop"]);
+    } else {
+      beat = { "buildup": null, "loop": null };
+    }
+
+    if ((beat["buildup"] != currentBeat["buildup"]) ||
+          (beat["loop"] != currentBeat["loop"])) {
+      currentBeat = beat;
+      doBeatEffect(beatChar);
+      callEventListeners("beat", currentBeat);
+    }
+
+    window.requestAnimationFrame(beatAnalyze);
+  }
+
+  var startBeatAnalysis = function() {
+    window.requestAnimationFrame(beatAnalyze);
+  }
+
+  var getBeatString = function() {
     var beats = "";
     var length = arguments[0];
     if (typeof(length) === "undefined") {
       length = 256;
     }
 
-    var time = audioCtx.currentTime;
-    if (typeof(currentSong["buildupRhythm"]) !== "undefined" &&
-        time < currentLoopStartTime) {
-      /* In the buildup */
-      var beat = Math.floor((time - currentBuildupStartTime) /
-          currentBeatDuration);
-      beats += currentSong["buildupRhythm"].slice(beat);
-    } else if (time >= currentLoopStartTime) {
-      var beat = Math.floor(
-          (time - currentLoopStartTime) % currentLoopBuffer.duration /
-              currentBeatDuration);
-      beats += currentSong["rhythm"].slice(beat);
-    }
+    if (currentSong) {
+      if (currentBeat["buildup"] !== null &&
+            (typeof(currentSong["buildupRhythm"]) !== "undefined")) {
+        /* Currently in buildup */
+        beats += currentSong["buildupRhythm"].slice(currentBeat["buildup"]);
+      } else if (currentBeat["loop"] !== null) {
+        /* Currently in loop */
+        beats += currentSong["rhythm"].slice(currentBeat["loop"]);
+      } else {
+        /* Song is loaded but not yet playing? */
+        if (typeof(currentSong["buildupRhythm"]) !== "undefined") {
+          beats += currentSong["buildupRhythm"];
+        }
+      }
 
-    while (beats.length < 256) {
-      beats += currentSong["rhythm"];
+      while (beats.length < length) {
+        beats += currentSong["rhythm"];
+      }
     }
 
     return beats;
