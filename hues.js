@@ -1,57 +1,183 @@
 (function() {
-  var defaultRespackURI = window.huesConfig["respack"];
-  var defaultSong = window.huesConfig["defaultSong"];
-  var autoMode = window.huesConfig["autoMode"];
+  "use strict";
+  var self = {
+    "defaults": {
+      "respack": encodeURIComponent("0x40 Hues 5.0 Defaults"),
+      /* In the default respack, this is "weapon" */
+      "song": 18,
+      "hues": "builtin",
+    },
 
-  if (typeof(defaultRespackURI) === 'undefined') {
-    defaultRespackURI = encodeURIComponent("0x40 Hues 5.0 Defaults");
-  }
-  if (typeof(defaultSong) === 'undefined') {
-    defaultSong = 18;
-  }
-  if (autoMode != "normal" && autoMode != "full auto") {
-    autoMode = "full auto";
+    /* Values are 0: normal, 1: auto, 2: full auto
+     * normal never changes image.
+     * auto changes image only on song start or loop
+     * full auto changes image on (most) effects
+     */
+    "autoMode": 2,
+
+    /* All the respacks that are currently loaded
+     * Respacks can contain hues, images, and songs. */
+    "respacks": {},
+
+    /* The currently loaded list of hues */
+    "hues": [],
+    /* The currently loaded list of images */
+    "images": [],
+    /* The currently loaded list of songs */
+    "songs": [],
+
+    /* Whether the beat analysis function is active. */
+    "beatAnalysisRunning": false
+  };
+
+  /* Hues.setAutoMode(autoMode) 
+   * Select when to automatically change images.
+   *
+   * autoMode: One of the following values:
+   *     * "normal": Never automatically change images.
+   *     * "auto": Change image when the song loops or changes.
+   *     * "full auto": Image changes are managed by the song rhythm string.
+   *
+   * No return value.
+   */
+  var setAutoMode = function(autoMode) {
+    switch (autoMode) {
+    case "normal":
+      self["autoMode"] = 0; break;
+    case "auto":
+      self["autoMode"] = 1; break;
+    case "full auto":
+      self["autoMode"] = 2; break;
+    default:
+      throw Error("Unknown auto mode: " + autoMode);
+    }
   }
 
-  var Hues = {};
+  /* Hues.getAutoMode()
+   * Get the current image changing mode.
+   *
+   * Returns the string name of the mode (see setAutoMode() for the list)
+   */
+  var getAutoMode = function() {
+    switch (self["autoMode"]) {
+    case 0: return "normal";
+    case 1: return "auto";
+    case 2: return "full auto";
+    }
+  };
 
-  /* TODO: get the official hues list(s).
-   * This is currently using the list from miniHues, which doesn't match the
-   * flash. */
-  var hues = [
-    {name:"Mahogany",			value:"#CD4A4A"}, {name:"Banana Mania",			value:"#FAE7B5"},
-    {name:"Beaver",			value:"#9F8170"}, {name:"Black",				value:"#232323"},
-    {name:"Chestnut",			value:"#BC5D58"}, {name:"Copper",				value:"#DD9475"},
-    {name:"Cornflower",		value:"#9ACEEB"}, {name:"Denim",				value:"#2B6CC4"},
-    {name:"Desert Sand",		value:"#EFCDB8"}, {name:"Eggplant",				value:"#6E5160"},
-    {name:"Electric Lime",	value:"#1DF914"}, {name:"Fern",					value:"#71BC78"},
-    {name:"Goldenrod",		value:"#FCD975"}, {name:"Granny Smith Apple",	value:"#A8E4A0"},
-    {name:"Gray",				value:"#95918C"}, {name:"Green",				value:"#1CAC78"},
-    {name:"Hot Magenta",		value:"#FF1DCE"}, {name:"Inch Worm",			value:"#B2EC5D"},
-    {name:"Indigo",			value:"#5D76CB"}, {name:"Laser Lemon",			value:"#FDFC74"},
-    {name:"Lavender",			value:"#FCB4D5"}, {name:"Macaroni and Cheese",	value:"#FFBD88"},
-    {name:"Manatee",			value:"#979AAA"}, {name:"Mango Tango",			value:"#FF8243"},
-    {name:"Melon",			value:"#FDBCB4"}, {name:"Midnight Blue",		value:"#1A4876"},
-    {name:"Neon Carrot",		value:"#FFA343"}, {name:"Olive Green",			value:"#BAB86C"},
-    {name:"Orange",			value:"#FF7538"}, {name:"Orchid",				value:"#E6A8D7"},
-    {name:"Outer Space",		value:"#414A4C"}, {name:"Outrageous Orange",	value:"#FF6E4A"},
-    {name:"Pacific Blue",		value:"#1CA9C9"}, {name:"Periwinkle",			value:"#C5D0E6"},
-    {name:"Plum",				value:"#8E4585"}, {name:"Purple Heart",			value:"#7442C8"},
-    {name:"Raw Sienna",		value:"#D68A59"}, {name:"Razzmatazz",			value:"#E3256B"},
-    {name:"Red",				value:"#EE204D"}, {name:"Robin Egg Blue",		value:"#1FCECB"},
-    {name:"Royal Purple",		value:"#7851A9"}, {name:"Salmon",				value:"#FF9BAA"},
-    {name:"Scarlet",			value:"#FC2847"}, {name:"Sea Green",			value:"#9FE2BF"},
-    {name:"Sepia",			value:"#A5694F"}, {name:"Shadow",				value:"#8A795D"},
-    {name:"Shamrock",			value:"#45CEA2"}, {name:"Shocking Pink",		value:"#FB7EFD"},
-    {name:"Spring Green",		value:"#ECEABE"}, {name:"Sunset Orange",		value:"#FD5E53"},
-    {name:"Tan",				value:"#FAA76C"}, {name:"Tickle Me Pink",		value:"#FC89AC"},
-    {name:"Timberwolf",		value:"#DBD7D2"}, {name:"Tropical Rain Forest",	value:"#17806D"},
-    {name:"Turquoise Blue",	value:"#77DDE7"}, {name:"Vivid Tangerine",		value:"#FFA089"},
-    {name:"Vivid Violet",		value:"#8F509D"}, {name:"White",				value:"#EDEDED"},
-    {name:"Wild Strawberry",	value:"#FF43A4"}, {name:"Wild Watermelon",		value:"#FC6C85"},
-    {name:"Wisteria",			value:"#CDA4DE"}, {name:"Yellow",				value:"#FCE883"},
-    {name:"Yellow Green",		value:"#C5E384"}, {name:"Yellow Orange",		value:"#FFB653"}
-  ];
+  /* Hues.addHues(respackName, [huesList])
+   * Add hues from a loaded respack to the active hues list.
+   * 
+   * respackName: Name of respack to load hues from.
+   * huesList: (optional) List of indexes of particular hues to load from
+   *     the respack
+   *
+   * Throws Error when the requested respack isn't loaded, doesn't
+   * contain hues, or you ask for hues that aren't in the respack.
+   *
+   * No return value.
+   */
+  var addHues = function(respackName) {
+    var huesList = arguments[1];
+
+    var respack = self["respacks"][respackName];
+    if (typeof(respack) === "undefined") {
+      throw Error("Unknown respack: " + respackName);
+    };
+
+    var hues = respack["hues"];
+    if (typeof(hues) === "undefined") {
+      throw Error("Respack does not contain hues: " + respackName);
+    };
+
+    var addHue = function(hue) {
+      /* Avoid duplicate hues; skip a hue if it's already in the list */
+      var hues = self["hues"];
+      var i = hues.indexOf(hue);
+      if (i < 0) {
+        hues.push(hue);
+      }
+    };
+
+    if (typeof(huesList) !== "undefined") {
+      huesList.forEach(function(hueIndex) {
+        addHue(hues[hueIndex]);
+      });
+    } else {
+      hues.forEach(addHue);
+    }
+  };
+
+  /* Hues.addSongs(respackName, [songsList])
+   * Add songs from a loaded respack to the active songs list.
+   * 
+   * respackName: Name of respack to load songs from.
+   * songsList: (optional) List of indexes of particular songs to load from
+   *     the respack
+   *
+   * Throws Error when the requested respack isn't loaded, doesn't
+   * contain songs, or you ask for songs that aren't in the respack.
+   *
+   * No return value.
+   */
+  var addSongs = function(respackName) {
+    var songsList = arguments[1];
+
+    var respack = self["respacks"][respackName];
+    if (typeof(respack) === "undefined") {
+      throw Error("Unknown respack: " + respackName);
+    };
+
+    var songs = respack["songs"];
+    if (typeof(songs) === "undefined") {
+      throw Error("Respack does not contain songs: " + respackName);
+    };
+
+    var addSong = function(song) {
+      /* Avoid duplicate songs; skip a song if it's already in the list */
+      var songs = self["songs"];
+      var i = songs.indexOf(song);
+      if (i < 0) {
+        songs.push(song);
+      }
+    };
+
+    if (typeof(songsList) !== "undefined") {
+      songsList.forEach(function(songIndex) {
+        addSong(songs[songIndex]);
+      });
+    } else {
+      songs.forEach(addSong);
+    }
+  };
+
+
+  /* Load configuration, which is set in a global (window) object */
+  (function() {
+    var respackURI = window.huesConfig["respack"];
+    if (typeof(respackURI) !== 'undefined') {
+      self["defaults"]["respackURI"] = respackURI;
+    }
+
+    var song = window.huesConfig["defaultSong"];
+    if (typeof(song) !== 'undefined') {
+      self["defaults"]["song"] = song;
+    }
+
+    var autoMode = window.huesConfig["autoMode"];
+    if (typeof(autoMode) !== 'undefined') {
+      setAutoMode(autoMode);
+    }
+  })();
+
+  /* The public object */
+  var Hues = {
+    "setAutoMode": setAutoMode,
+    "getAutoMode": getAutoMode,
+    "addHues": addHues,
+  };
+
 
     /* Some cheapo event listening stuff, mostly to hook up UI controls */
   var eventListeners = {
@@ -87,18 +213,9 @@
     });
   };
 
-  /* Set/get automatic mode (auto picture switching) */
-  var getAutoMode = function() {
-    return autoMode;
-  };
-  Hues["getAutoMode"] = getAutoMode;
-  var setAutoMode = function(newAutoMode) {
-    autoMode = newAutoMode;
-    callEventListeners("automodechange", autoMode);
-  };
 
   var audioCtx = new AudioContext;
-  var currentSongNum = defaultSong;
+  var currentSongNum = self["defaults"]["song"];
   var currentSong = null;
   var currentBuildupSource = null;
   var currentBuildupBuffer = null;
@@ -143,6 +260,66 @@
       });
     });
   };
+
+  var loadRespackHues = function(respack) {
+    return new Promise(function(resolve, reject) {
+      fetch(respack["uri"] + "/hues.xml")
+      .catch(reject)
+      .then(function(response) {
+        
+        if (response.status == 404) {
+          resolve(respack);
+          return;
+        }
+        
+        if (!response.ok) {
+          reject(Error("Could not fetch respack hues.xml: " +
+                response.status + " " + response.statusText));
+          return;
+        }
+
+        response.text()
+        .catch(reject)
+        .then(function(bodyText) {
+          respack["hues"] = [];
+
+          var parser = new DOMParser();
+          var doc = parser.parseFromString(bodyText, "application/xml");
+          var iterator = doc.evaluate("/hues/hue", doc, null,
+              XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+          var node = iterator.iterateNext();
+          while (node) {
+            var hue = {};
+            hue["name"] = node.getAttribute("name");
+            var hex = node.textContent;
+            if (!hex[0] == "#") {
+              hex = "#" + hex;
+            }
+            hue["hex"] = hex;
+
+            /* The effects need the hue value as r,g,b floating-point */
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (!result) {
+              throw Error("Could not parse color value for " + name + ": " +
+                  hex);
+            }
+            hue["rgb"] = [
+              parseInt(result[1], 16) / 255,
+              parseInt(result[2], 16) / 255,
+              parseInt(result[3], 16) / 255
+            ];
+
+
+            respack["hues"].push(hue);
+
+            node = iterator.iterateNext();
+          };
+
+          resolve(respack);
+        });
+      });
+    });
+  }
 
   var loadRespackSongTrackFetch = function(uri) {
     return new Promise(function(resolve, reject) {
@@ -240,7 +417,6 @@
       .then(function(response) {
         
         if (response.status == 404) {
-          console.log("Respack contains no songs");
           resolve(respack);
           return;
         }
@@ -255,6 +431,7 @@
         .catch(reject)
         .then(function(bodyText) {
           respack["songs"] = [];
+          var songPromises = [];
 
           var parser = new DOMParser();
           var doc = parser.parseFromString(bodyText, "application/xml");
@@ -274,11 +451,14 @@
             }
 
             respack["songs"].push(song);
+            songPromises.push(loadRespackSongMedia(respack, song));
 
             node = iterator.iterateNext();
           };
 
-          resolve(respack);
+          Promise.all(songPromises).then(function() {
+            resolve(respack);
+          }).catch(reject);
         });
       });
     });
@@ -380,7 +560,6 @@
       .then(function(response) {
         
         if (response.status == 404) {
-          // Respack has no images, that's OK here.
           resolve(respack);
           return;
         }
@@ -440,27 +619,49 @@
         "uri": uri
       };
 
+      console.log("Loading respack at " + uri);
+
       var respackInfo = loadRespackInfo(respack);
       
       respackInfo.then(function(respack) {
         console.log("Loaded respack info for " + respack["name"]);
       });
 
+      var respackHues = respackInfo.then(loadRespackHues);
+      respackHues.then(function(respack) {
+        if (respack["hues"]) {
+          console.log("Loaded " + respack["hues"].length +
+              " hues from " + respack["name"]);
+        } else {
+          console.log("Respack contains no hues: " + respack["name"]);
+        }
+      });
+
       var respackSongs = respackInfo.then(loadRespackSongs);
       respackSongs.then(function(respack) {
-        console.log("Loaded " + respack["songs"].length +
-            " songs from " + respack["name"]);
+        if (respack["songs"]) {
+          console.log("Loaded " + respack["songs"].length +
+              " songs from " + respack["name"]);
+        } else {
+          console.log("Respack contains no songs: " + respack["name"]);
+        }
       });
 
       var respackImages = respackInfo.then(loadRespackImages);
       respackImages.then(function(respack) {
-        console.log("Loaded " + respack["images"].length +
-            " images from " + respack["name"]);
+        if (respack["images"]) {
+          console.log("Loaded " + respack["images"].length +
+              " images from " + respack["name"]);
+        } else {
+          console.log("Respack has no images: " + respack["name"]);
+        }
       });
-      Promise.all([respackSongs, respackImages])
+      Promise.all([respackHues, respackSongs, respackImages])
       .catch(reject)
       .then(function() {
-        Hues["respack"] = respack;
+        console.log("All content from respack " + respack["name"] +
+            " has loaded");
+        self["respacks"][respack["name"]] = respack;
         resolve(respack);
       });
 
@@ -469,10 +670,35 @@
   Hues["loadRespack"] = loadRespack;
 
   var loadDefaultRespack = function() {
-    return loadRespack(defaultRespackURI).then(function(respack) {
-      if (respack["songs"]) {
-        currentSong = respack[defaultSong];
+    var builtin = loadRespack("respacks/builtin");
+
+    var respackURI = self["defaults"]["respack"];
+    if (respackURI.indexOf(":") < 0) {
+      respackURI = "respacks/" + respackURI;
+    }
+
+    var respack = loadRespack(respackURI);
+
+    return Promise.all([builtin, respack])
+    .then(function(respacks) {
+      var builtin = respacks[0];
+      var respack = respacks[1];
+
+      if (respack["hues"]) {
+        addHues(respack["name"]);
+      } else {
+        addHues("builtin");
       }
+      console.log("Loaded hues:");
+      console.log(self["hues"]);
+      randomHue();
+
+      if (respack["songs"]) {
+        addSongs(respack["name"]);
+        currentSong = respack["songs"][self["defaults"]["song"]];
+      }
+      console.log("Loaded songs:");
+      console.log(self["songs"]);
     });
   }
   Hues["loadDefaultRespack"] = loadDefaultRespack;
@@ -514,106 +740,98 @@
   }
   Hues["stopSong"] = stopSong;
 
-  var changeSong = function(respack, song) {
+  var changeSong = function(songIndex) {
     stopSong();
+
+    var song = self["songs"][songIndex];
+    currentSong = song;
+    currentSongNum = songIndex;
 
     console.log("Switching to " + song["title"]);
 
-    var newSong = loadRespackSongMedia(respack, song)
-    .then(function() {
-      currentSong = song;
+    var buildupBuffer = song["buildupBuffer"];
+    var buildupDuration = 0;
+    var buildupSource = null;
+    if (buildupBuffer && buildupBuffer.length > 0) {
+      buildupDuration = buildupBuffer.duration;
+      buildupSource = audioCtx.createBufferSource();
+      buildupSource.buffer = buildupBuffer;
+      buildupSource.connect(audioCtx.destination);
+    }
 
-      var buildupBuffer = song["buildupBuffer"];
-      var buildupDuration = 0;
-      var buildupSource = null;
-      if (buildupBuffer && buildupBuffer.length > 0) {
-        buildupDuration = buildupBuffer.duration;
-        buildupSource = audioCtx.createBufferSource();
-        buildupSource.buffer = buildupBuffer;
-        buildupSource.connect(audioCtx.destination);
-      }
+    var loopBuffer = song["loopBuffer"];
+    var loopDuration = loopBuffer.duration;
+    var loopSource = audioCtx.createBufferSource();
+    loopSource.buffer = loopBuffer;
+    loopSource.loop = true;
+    loopSource.connect(audioCtx.destination);
 
-      var loopBuffer = song["loopBuffer"];
-      var loopDuration = loopBuffer.duration;
-      var loopSource = audioCtx.createBufferSource();
-      loopSource.buffer = loopBuffer;
-      loopSource.loop = true;
-      loopSource.connect(audioCtx.destination);
+    var beatDuration = loopDuration / song["rhythm"].length;
+    console.log("Beat duration is " + beatDuration);
+    console.log("Buildup duration is " + buildupDuration + " (" +
+      Math.round(buildupDuration / beatDuration) + " beats)")
+    console.log("Loop duration is " + loopDuration + " (" +
+      song["rhythm"].length + " beats)")
+    currentBeatDuration = beatDuration;
 
-      var beatDuration = loopDuration / song["rhythm"].length;
-      console.log("Beat duration is " + beatDuration);
-      console.log("Buildup duration is " + buildupDuration + " (" +
-        Math.round(buildupDuration / beatDuration) + " beats)")
-      console.log("Loop duration is " + loopDuration + " (" +
-        song["rhythm"].length + " beats)")
-      currentBeatDuration = beatDuration;
-
-      if (buildupBuffer) {
-        /* Songs that have buildups might be missing buildupRhythm, or
-         * have it too short. Fix that by padding it. */
-        if (typeof(song["buildupRhythm"]) !== "undefined") {
-          var buildupDelta = Math.round(buildupDuration / beatDuration) - 
-            song["buildupRhythm"].length;
-          if (buildupDelta > 0) {
-            song["buildupRhythm"] += ".".repeat(buildupDelta);
-          }
-        } else {
-          song["buildupRhythm"] = ".".repeat(
-              Math.round(buildupDuration / beatDuration));
+    if (buildupBuffer) {
+      /* Songs that have buildups might be missing buildupRhythm, or
+       * have it too short. Fix that by padding it. */
+      if (typeof(song["buildupRhythm"]) !== "undefined") {
+        var buildupDelta = Math.round(buildupDuration / beatDuration) - 
+          song["buildupRhythm"].length;
+        if (buildupDelta > 0) {
+          song["buildupRhythm"] += ".".repeat(buildupDelta);
         }
+      } else {
+        song["buildupRhythm"] = ".".repeat(
+            Math.round(buildupDuration / beatDuration));
       }
+    }
 
-      var buildupStart = audioCtx.currentTime;
-      var loopStart = buildupStart + buildupDuration;
+    var buildupStart = audioCtx.currentTime;
+    var loopStart = buildupStart + buildupDuration;
 
-      if (buildupSource) {
-        currentBuildupSource = buildupSource;
-        currentBuildupBuffer = buildupBuffer;
-        buildupSource.start(buildupStart);
-      }
-      currentLoopSource = loopSource;
-      currentLoopBuffer = loopBuffer;
-      loopSource.start(loopStart);
+    if (buildupSource) {
+      currentBuildupSource = buildupSource;
+      currentBuildupBuffer = buildupBuffer;
+      buildupSource.start(buildupStart);
+    }
+    currentLoopSource = loopSource;
+    currentLoopBuffer = loopBuffer;
+    loopSource.start(loopStart);
 
-      currentBuildupStartTime = buildupStart;
-      currentLoopStartTime = loopStart;
+    currentBuildupStartTime = buildupStart;
+    currentLoopStartTime = loopStart;
 
-      startBeatAnalysis();
+    startBeatAnalysis();
 
-      return song;
-    });
+    callEventListeners("songchange", song);
 
-    newSong.then(function(song) {
-      callEventListeners("songchange", song);
-    });
-
-    return newSong;
+    return Promise.resolve(song);
   };
   Hues["changeSong"] = changeSong;
 
   var playSong = function() {
-    var respack = Hues["respack"];
-    return changeSong(respack, respack["songs"][currentSongNum]);
+    return changeSong(currentSongNum);
   }
   Hues["playSong"] = playSong;
 
   var prevSong = function() {
-    var respack = Hues["respack"];
     currentSongNum -= 1;
     if (currentSongNum < 0) {
-      currentSongNum = respack["songs"].length - 1;
+      currentSongNum = self["songs"].length - 1;
     }
-    return changeSong(respack, respack["songs"][currentSongNum]);
+    return changeSong(currentSongNum);
   }
   Hues["prevSong"] = prevSong;
 
   var nextSong = function() {
-    var respack = Hues["respack"];
     currentSongNum += 1;
-    if (currentSongNum >= respack["songs"].length) {
+    if (currentSongNum >= self["songs"].length) {
       currentSongNum = 0;
     }
-    return changeSong(respack, respack["songs"][currentSongNum]);
+    return changeSong(currentSongNum);
   }
   Hues["nextSong"] = nextSong;
 
@@ -623,11 +841,14 @@
   Hues["getCurrentSong"] = getCurrentSong;
 
   var getCurrentHue = function() {
-    return {"index": currentHueIndex, "hue": hues[currentHueIndex]};
+    var hues = self["hues"];
+    var hueInfo = {"index": currentHueIndex, "hue": hues[currentHueIndex]};
+    return hueInfo;
   };
   Hues["getCurrentHue"] = getCurrentHue;
 
   var randomHue = function() {
+    var hues = self["hues"];
     var newHueIndex = Math.floor(Math.random() * (hues.length - 1));
     if (newHueIndex >= currentHueIndex) {
       newHueIndex += 1;
@@ -635,24 +856,68 @@
     currentHueIndex = newHueIndex;
     return currentHueIndex;
   }
-  randomHue();
 
   var doBeatEffect = function(beatChar) {
     switch (beatChar) {
-    case '-':
-      /* Change colour only */
-      randomHue();
-      callEventListeners("huechange", getCurrentHue());
-      break;
     case 'x':
-      /* "snare"? colour plus blur */
+      /* Vertical blur (snare) 
+       * Changes color.
+       * Changes image on full auto. */
       randomHue();
       callEventListeners("huechange", getCurrentHue());
       break;
     case 'o':
-      /* "kick"? colour plus blur */
+      /* Horizontal blur (bass)
+       * Changes color.
+       * Changes image on full auto. */
       randomHue();
       callEventListeners("huechange", getCurrentHue());
+      break;
+    case '-':
+      /* No blur
+       * Changes color.
+       * Changes image on full auto. */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case '+':
+      /* Blackout
+       * Blackout lasts until next effect. */
+      break;
+    case '|':
+      /* Short blackout
+       * Changes image on full auto‽ */
+      break;
+    case ':':
+      /* Color only */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case '*':
+      /* Image only */
+      break;
+    case 'X':
+      /* Vertical blur only
+       * Changes color.
+       * Unlike 'x', does *not* change image on full auto. */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case 'O':
+      /* Horizontal blur only
+       * Changes color.
+       * Unlike 'o', does *not* change image on full auto. */
+      randomHue();
+      callEventListeners("huechange", getCurrentHue());
+      break;
+    case '~':
+      /* Fade color
+       * Color fade duration is until next effect. */
+      break;
+    case '=':
+      /* Fade and change image
+       * Image change is immediate.
+       * Color fade duration is until next effect. */
       break;
     }
   };
@@ -660,6 +925,7 @@
   var beatAnalyze = function() {
     if (!currentLoopBuffer) {
       console.log("Stopping beat analysis");
+      self["beatAnalysisRunning"] = false;
       currentBeat = { "buildup": null, "loop": null };
       callEventListeners("beat", currentBeat);
       return;
@@ -701,7 +967,11 @@
   }
 
   var startBeatAnalysis = function() {
-    window.requestAnimationFrame(beatAnalyze);
+    if (!self["beatAnalysisRunning"]) {
+      console.log("Starting beat analysis");
+      window.requestAnimationFrame(beatAnalyze);
+      self["beatAnalysisRunning"] = true;
+    }
   }
 
   var getBeatString = function() {

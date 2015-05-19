@@ -1,5 +1,6 @@
 /* Approximation of Retro UI */
 (function() {
+  "use strict";
   var selector = window.huesConfig["uiSelector"];
   var autoPlay = window.huesConfig["autoPlay"];
   if (typeof(selector) === 'undefined') {
@@ -51,7 +52,7 @@
     beatLabel.textContent = "B=$0x";
     beatDiv.appendChild(beatLabel);
     var beatField = document.createElement("span");
-    beatField.textContent = "00";
+    beatField.textContent = "0000";
     beatDiv.appendChild(beatField);
 
     var updateBeatField = function(beat) {
@@ -61,8 +62,9 @@
       } else if (beat["loop"] !== null) {
         beatNum = beat["loop"].toString(16);
       }
-      if (beatNum.length < 2) {
-        beatNum = "0" + beatNum;
+      var padding = 4 - beatNum.length;
+      if (padding > 0) {
+        beatNum = "0".repeat(padding) + beatNum;
       }
       beatField.textContent = beatNum.toUpperCase();
     };
@@ -154,17 +156,26 @@
   var setupCanvas = function(rootElement) {
     var canvas = document.createElement("canvas");
     canvas.style.position = "absolute";
+    canvas.style.display = "block";
     canvas.style.top = "0";
     canvas.style.left = "0";
     canvas.style.right = "0";
     canvas.style.bottom = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
     canvas.width = rootElement.clientWidth;
     canvas.height = rootElement.clientHeight;
     rootElement.appendChild(canvas);
 
+    var resizeCanvas = function() {
+      canvas.width = rootElement.clientWidth;
+      canvas.height = rootElement.clientHeight;
+    };
+    window.addEventListener('resize', resizeCanvas, false);
+
     var ctx = canvas.getContext("2d");
     var updateHue = function(hueInfo) {
-      ctx.fillStyle = hueInfo["hue"]["value"];
+      ctx.fillStyle = hueInfo["hue"]["hex"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
     updateHue(Hues.getCurrentHue());
@@ -191,10 +202,13 @@
   }
   
   var initialize = function() {
-    return setupRootElement()
+    var rootElement = setupRootElement();
+    var respack = Hues.loadDefaultRespack();
+
+    return Promise.all([rootElement, respack])
+    .then(function(args) { return args[0]; })
     .then(setupCanvas)
     .then(setupStatusArea)
-    .then(Hues.loadDefaultRespack)
     .then(setupKeyHandlers)
     .then(function() {
       if (autoPlay) { return Hues.playSong(); }
