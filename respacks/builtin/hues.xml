@@ -1,4 +1,5 @@
 <hues>
+  <!-- List of hues from miniHues.js -->
   <hue name="Mahogany">#CD4A4A</hue>
   <hue name="Banana Mania">#FAE7B5</hue>
   <hue name="Beaver">#9F8170</hue>
@@ -9,25 +10,25 @@
   <hue name="Denim">#2B6CC4</hue>
   <hue name="Desert Sand">#EFCDB8</hue>
   <hue name="Eggplant">#6E5160</hue>
+  <hue name="Electric Lime">#1DF914</hue>
+  <hue name="Fern">#71BC78</hue>
+  <hue name="Goldenrod">#FCD975</hue>
+  <hue name="Granny Smith Apple">#A8E4A0</hue>
+  <hue name="Gray">#95918C</hue>
+  <hue name="Green">#1CAC78</hue>
+  <hue name="Hot Magenta">#FF1DCE</hue>
+  <hue name="Inch Worm">#B2EC5D</hue>
+  <hue name="Indigo">#5D76CB</hue>
+  <hue name="Laser Lemon">#FDFC74</hue>
+  <hue name="Lavender">#FCB4D5</hue>
+  <hue name="Mac and Cheese">#FFBD88</hue>
+  <hue name="Manatee">#979AAA</hue>
+  <hue name="Mango Tango">#FF8243</hue>
+  <hue name="Melon">#FDBCB4</hue>
+  <hue name="Midnight Blue">#1A4876</hue>
+  <hue name="Neon Carrot">#FFA343</hue>
+  <hue name="Olive Green">#BAB86C</hue>
   <!--
-      {name:"Electric Lime",	  value:"#1DF914"},
-      {name:"Fern",		  value:"#71BC78"},
-      {name:"Goldenrod",		  value:"#FCD975"},
-      {name:"Granny Smith Apple",	  value:"#A8E4A0"},
-      {name:"Gray",		  value:"#95918C"},
-      {name:"Green",		  value:"#1CAC78"},
-      {name:"Hot Magenta",	  value:"#FF1DCE"},
-      {name:"Inch Worm",		  value:"#B2EC5D"},
-      {name:"Indigo",		  value:"#5D76CB"},
-      {name:"Laser Lemon",	  value:"#FDFC74"},
-      {name:"Lavender",		  value:"#FCB4D5"},
-      {name:"Mac and Cheese",       value:"#FFBD88"},
-      {name:"Manatee",		  value:"#979AAA"},
-      {name:"Mango Tango",	  value:"#FF8243"},
-      {name:"Melon",		  value:"#FDBCB4"},
-      {name:"Midnight Blue",	  value:"#1A4876"},
-      {name:"Neon Carrot",	  value:"#FFA343"},
-      {name:"Olive Green",	  value:"#BAB86C"},
       {name:"Orange",		  value:"#FF7538"},
       {name:"Orchid",		  value:"#E6A8D7"},
       {name:"Outer Space",	  value:"#414A4C"},

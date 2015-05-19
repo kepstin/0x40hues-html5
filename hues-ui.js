@@ -45,6 +45,23 @@
     Hues.addEventListener("automodechange", updateModeField);
   }
 
+  var setupStatusImage = function(statusDiv) {
+    var imageDiv = document.createElement("div");
+    statusDiv.appendChild(imageDiv);
+    var imageLabel = document.createElement("span");
+    imageLabel.textContent = "I=";
+    imageDiv.appendChild(imageLabel);
+    var imageField = document.createElement("span");
+    imageField.textContent = "undefined";
+    imageDiv.appendChild(imageField);
+
+    var updateImageField = function(imageInfo) {
+      imageField.textContent = imageInfo["name"].toUpperCase();
+    }
+    updateImageField(Hues.getCurrentImage());
+    Hues.addEventListener("imagechange", updateImageField);
+  };
+
   var setupStatusBeatNum = function(statusDiv) {
     var beatDiv = document.createElement("div");
     statusDiv.appendChild(beatDiv);
@@ -144,6 +161,7 @@
     rootElement.appendChild(statusDiv);
 
     setupStatusMode(statusDiv);
+    setupStatusImage(statusDiv);
     setupStatusBeatNum(statusDiv);
     setupStatusHue(statusDiv);
     setupStatusHueName(statusDiv);
@@ -173,10 +191,31 @@
     };
     window.addEventListener('resize', resizeCanvas, false);
 
+    var imageCanvas = document.createElement("canvas");
+    var imageCtx = imageCanvas.getContext("2d");
+    var updateImage = function(imageInfo) {
+      var img = imageInfo["img"];
+      if (typeof(img) === "undefined") {
+        /* TODO: animation */
+        return;
+      }
+      imageCanvas.width = img.width;
+      imageCanvas.height = img.height;
+      imageCtx.fillStyle = "white";
+      imageCtx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+      imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+    };
+    updateImage(Hues.getCurrentImage());
+    Hues.addEventListener("imagechange", updateImage);
+
     var ctx = canvas.getContext("2d");
     var updateHue = function(hueInfo) {
+      ctx.save();
       ctx.fillStyle = hueInfo["hue"]["hex"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "overlay";
+      ctx.drawImage(imageCanvas, 0, 0, imageCanvas.width, imageCanvas.height);
+      ctx.restore();
     };
     updateHue(Hues.getCurrentHue());
     Hues.addEventListener("huechange", updateHue);
