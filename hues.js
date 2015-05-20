@@ -39,6 +39,9 @@
 
     /* Event listener hookups for UI functionality. */
     "eventListeners": {
+      "progressstart": [],
+      "progress": [],
+      "progressend": [],
       "automodechange": [],
       "huechange": [],
       "songchange": [],
@@ -624,7 +627,12 @@
             }
 
             respack["songs"].push(song);
-            songPromises.push(loadRespackSongMedia(respack, song));
+            callEventListeners("progress", 0, 1);
+            songPromises.push(loadRespackSongMedia(respack, song)
+              .then(function() {
+                callEventListeners("progress", 1, 0);
+              })
+            );
 
             node = iterator.iterateNext();
           };
@@ -759,7 +767,12 @@
             }
 
             respack["images"].push(image);
-            imagePromises.push(loadRespackImageMedia(respack, image));
+            callEventListeners("progress", 0, 1);
+            imagePromises.push(loadRespackImageMedia(respack, image)
+              .then(function() {
+                callEventListeners("progress", 1, 0);
+              })
+            );
 
             node = iterator.iterateNext();
           };
@@ -785,11 +798,13 @@
       };
 
       console.log("Loading respack at " + uri);
+      callEventListeners("progress", 0, 4);
 
       var respackInfo = loadRespackInfo(respack);
       
       respackInfo.then(function(respack) {
         console.log("Loaded respack info for " + respack["name"]);
+        callEventListeners("progress", 1, 0);
       });
 
       var respackHues = respackInfo.then(loadRespackHues);
@@ -800,6 +815,7 @@
         } else {
           console.log("Respack contains no hues: " + respack["name"]);
         }
+        callEventListeners("progress", 1, 0);
       });
 
       var respackSongs = respackInfo.then(loadRespackSongs);
@@ -810,6 +826,7 @@
         } else {
           console.log("Respack contains no songs: " + respack["name"]);
         }
+        callEventListeners("progress", 1, 0);
       });
 
       var respackImages = respackInfo.then(loadRespackImages);
@@ -820,6 +837,7 @@
         } else {
           console.log("Respack has no images: " + respack["name"]);
         }
+        callEventListeners("progress", 1, 0);
       });
       Promise.all([respackHues, respackSongs, respackImages])
       .catch(reject)
@@ -835,6 +853,7 @@
   Hues["loadRespack"] = loadRespack;
 
   var loadDefaultRespack = function() {
+    callEventListeners("progressstart");
     var builtin = loadRespack("respacks/builtin");
 
     var respackURI = self["defaults"]["respack"];
@@ -876,6 +895,7 @@
       }
       console.log("Loaded images:");
       console.log(self["images"]);
+      callEventListeners("progressend");
     });
   }
   Hues["loadDefaultRespack"] = loadDefaultRespack;

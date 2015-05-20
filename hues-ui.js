@@ -83,6 +83,9 @@
       if (padding > 0) {
         beatNum = "0".repeat(padding) + beatNum;
       }
+      if (beat["buildup"] !== null) {
+        beatNum += " (BUILD)";
+      }
       beatField.textContent = beatNum.toUpperCase();
     };
     Hues.addEventListener("beat", updateBeatField);
@@ -134,6 +137,17 @@
     Hues.addEventListener("songchange", updateSongField);
   }
 
+  var setupStatusCredits = function(statusDiv) {
+    var creditsDiv = document.createElement("div");
+    creditsDiv.style.opacity = "0.50";
+    statusDiv.appendChild(creditsDiv);
+    var creditsLink = document.createElement("a");
+    creditsLink.href = "https://github.com/kepstin/0x40hues-html5";
+    creditsLink.textContent = "0x40 HUES OF HTML5 BY KEPSTIN";
+    creditsLink.target = "_blank";
+    creditsDiv.appendChild(creditsLink);
+  }
+
   var setupStatusBeats = function(statusDiv) {
     var beatsDiv = document.createElement("div");
     beatsDiv.style.overflowX = "hidden";
@@ -166,9 +180,58 @@
     setupStatusHue(statusDiv);
     setupStatusHueName(statusDiv);
     setupStatusSong(statusDiv);
+    setupStatusCredits(statusDiv);
     setupStatusBeats(statusDiv);
 
     return Promise.resolve(rootElement);
+  }
+
+  var setupProgress = function(rootElement) {
+    return new Promise(function(resolve, reject) {
+      var progressDiv = document.createElement("div");
+      progressDiv.style.position = "relative";
+      progressDiv.style.top = "50%";
+      progressDiv.style.transform = "translateY(-50%);"
+      progressDiv.style.textAlign = "center";
+      progressDiv.style.fontSize = "600%";
+      rootElement.appendChild(progressDiv);
+
+      var completed = 0;
+      var total = 0;
+      var updateProgress = function() {
+        var progress;
+        if (total == 0) {
+          progress = 0;
+        } else {
+          progress = completed / total;
+        }
+        progress = Math.floor(progress * 64);
+
+        var progressStr = progress.toString(16);
+        var padding = 2 - progressStr.length;
+        if (padding > 0) {
+          progressStr = "0".repeat(padding) + progressStr;
+        }
+        progressDiv.textContent = "0x" + progressStr;
+      };
+      Hues.addEventListener("progressstart", function() {
+        completed = 0;
+        total = 0;
+        progressDiv.style.display = "block";
+        updateProgress();
+      });
+      Hues.addEventListener("progress", function(done, added) {
+        completed += done;
+        total += added;
+        updateProgress();
+      });
+      Hues.addEventListener("progressend", function() {
+        setTimeout(function() {
+          progressDiv.style.display = "none";
+          resolve(rootElement);
+        }, 500);
+      });
+    });
   }
 
   var setupCanvas = function(rootElement) {
@@ -261,9 +324,10 @@
   
   var initialize = function() {
     var rootElement = setupRootElement();
-    var respack = Hues.loadDefaultRespack();
+    var progress = rootElement.then(setupProgress);
+    var respack = rootElement.then(Hues.loadDefaultRespack);
 
-    return Promise.all([rootElement, respack])
+    return Promise.all([rootElement, progress, respack])
     .then(function(args) { return args[0]; })
     .then(setupCanvas)
     .then(setupStatusArea)
