@@ -191,14 +191,15 @@
     };
     window.addEventListener('resize', resizeCanvas, false);
 
+    var currentImageInfo = null;
     var imageCanvas = document.createElement("canvas");
     var imageCtx = imageCanvas.getContext("2d");
     var updateImage = function(imageInfo) {
       var img = imageInfo["img"];
       if (typeof(img) === "undefined") {
-        /* TODO: animation */
         return;
       }
+      currentImageInfo = imageInfo;
       imageCanvas.width = img.width;
       imageCanvas.height = img.height;
       imageCtx.fillStyle = "white";
@@ -211,10 +212,28 @@
     var ctx = canvas.getContext("2d");
     var updateHue = function(hueInfo) {
       ctx.save();
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var scaledWidth = (canvas.height / imageCanvas.height) *
+          imageCanvas.width;
+      switch (currentImageInfo["align"]) {
+      case "left":
+        ctx.drawImage(imageCanvas, 0, 0, scaledWidth, canvas.height);
+        break;
+      case "right":
+        ctx.drawImage(imageCanvas, canvas.width - scaledWidth, 0,
+            scaledWidth, canvas.height);
+        break;
+      case "center":
+        ctx.drawImage(imageCanvas, (canvas.width - scaledWidth) / 2, 0,
+            scaledWidth, canvas.height);
+        break;
+      }
+      ctx.globalCompositeOperation = "hard-light";
       ctx.fillStyle = hueInfo["hue"]["hex"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.globalCompositeOperation = "overlay";
-      ctx.drawImage(imageCanvas, 0, 0, imageCanvas.width, imageCanvas.height);
       ctx.restore();
     };
     updateHue(Hues.getCurrentHue());

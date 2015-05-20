@@ -28,15 +28,15 @@
   <hue name="Midnight Blue">#1A4876</hue>
   <hue name="Neon Carrot">#FFA343</hue>
   <hue name="Olive Green">#BAB86C</hue>
+  <hue name="Orange">#FF7538</hue>
+  <hue name="Orchid">#E6A8D7</hue>
+  <hue name="Outer Space">#414A4C</hue>
+  <hue name="Outrageous Orange">#FF6E4A</hue>
+  <hue name="Pacific Blue">#1CA9C9</hue>
+  <hue name="Periwinkle">#C5D0E6</hue>
+  <hue name="Plum">#8E4585</hue>
+  <hue name="Purple Heart">#7442C8</hue>
   <!--
-      {name:"Orange",		  value:"#FF7538"},
-      {name:"Orchid",		  value:"#E6A8D7"},
-      {name:"Outer Space",	  value:"#414A4C"},
-      {name:"Outrageous Orange",	  value:"#FF6E4A"},
-      {name:"Pacific Blue",	  value:"#1CA9C9"},
-      {name:"Periwinkle",		  value:"#C5D0E6"},
-      {name:"Plum",		  value:"#8E4585"},
-      {name:"Purple Heart",	  value:"#7442C8"},
       {name:"Raw Sienna",		  value:"#D68A59"},
       {name:"Razzmatazz",		  value:"#E3256B"},
       {name:"Red",		  value:"#EE204D"},

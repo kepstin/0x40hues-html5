@@ -765,8 +765,6 @@
           };
 
           Promise.all(imagePromises).then(function() {
-            console.log("Respack images:");
-            console.log(respack["images"]);
             resolve(respack);
           }).catch(reject);
 
