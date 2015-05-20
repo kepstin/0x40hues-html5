@@ -36,34 +36,32 @@
   <hue name="Periwinkle">#C5D0E6</hue>
   <hue name="Plum">#8E4585</hue>
   <hue name="Purple Heart">#7442C8</hue>
-  <!--
-      {name:"Raw Sienna",		  value:"#D68A59"},
-      {name:"Razzmatazz",		  value:"#E3256B"},
-      {name:"Red",		  value:"#EE204D"},
-      {name:"Robin Egg Blue",	  value:"#1FCECB"},
-      {name:"Royal Purple",	  value:"#7851A9"},
-      {name:"Salmon",		  value:"#FF9BAA"},
-      {name:"Scarlet",		  value:"#FC2847"},
-      {name:"Sea Green",		  value:"#9FE2BF"},
-      {name:"Sepia",		  value:"#A5694F"},
-      {name:"Shadow",		  value:"#8A795D"},
-      {name:"Shamrock",		  value:"#45CEA2"},
-      {name:"Shocking Pink",	  value:"#FB7EFD"},
-      {name:"Spring Green",	  value:"#ECEABE"},
-      {name:"Sunset Orange",	  value:"#FD5E53"},
-      {name:"Tan",		  value:"#FAA76C"},
-      {name:"Tickle Me Pink",	  value:"#FC89AC"},
-      {name:"Timberwolf",		  value:"#DBD7D2"},
-      {name:"Tropical Rain Forest", value:"#17806D"},
-      {name:"Turquoise Blue",	  value:"#77DDE7"},
-      {name:"Vivid Tangerine",	  value:"#FFA089"},
-      {name:"Vivid Violet",	  value:"#8F509D"},
-      {name:"White",		  value:"#EDEDED"},
-      {name:"Wild Strawberry",	  value:"#FF43A4"},
-      {name:"Wild Watermelon",	  value:"#FC6C85"},
-      {name:"Wisteria",		  value:"#CDA4DE"},
-      {name:"Yellow",		  value:"#FCE883"},
-      {name:"Yellow Green",	  value:"#C5E384"},
-      {name:"Yellow Orange",	  value:"#FFB653"}
-  -->
+  <hue name="Raw Sienna">#D68A59</hue>
+  <hue name="Razzmatazz">#E3256B</hue>
+  <hue name="Red">#EE204D</hue>
+  <hue name="Robin Egg Blue">#1FCECB</hue>
+  <hue name="Royal Purple">#7851A9</hue>
+  <hue name="Salmon">#FF9BAA</hue>
+  <hue name="Scarlet">#FC2847</hue>
+  <hue name="Sea Green">#9FE2BF</hue>
+  <hue name="Sepia">#A5694F</hue>
+  <hue name="Shadow">#8A795D</hue>
+  <hue name="Shamrock">#45CEA2</hue>
+  <hue name="Shocking Pink">#FB7EFD</hue>
+  <hue name="Spring Green">#ECEABE</hue>
+  <hue name="Sunset Orange">#FD5E53</hue>
+  <hue name="Tan">#FAA76C</hue>
+  <hue name="Tickle Me Pink">#FC89AC</hue>
+  <hue name="Timberwolf">#DBD7D2</hue>
+  <hue name="Tropical Rain Forest">#17806D</hue>
+  <hue name="Turquoise Blue">#77DDE7</hue>
+  <hue name="Vivid Tangerine">#FFA089</hue>
+  <hue name="Vivid Violet">#8F509D</hue>
+  <hue name="White">#EDEDED</hue>
+  <hue name="Wild Strawberry">#FF43A4</hue>
+  <hue name="Wild Watermelon">#FC6C85</hue>
+  <hue name="Wisteria">#CDA4DE</hue>
+  <hue name="Yellow">#FCE883</hue>
+  <hue name="Yellow Green">#C5E384</hue>
+  <hue name="Yellow Orange">#FFB653</hue>
 </hues>
