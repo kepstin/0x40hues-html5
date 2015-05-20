@@ -295,6 +295,7 @@
         break;
       }
       ctx.globalCompositeOperation = "hard-light";
+      ctx.globalAlpha = 0.7;
       ctx.fillStyle = hueInfo["hue"]["hex"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
