@@ -7,11 +7,8 @@ attribute vec2 position;
 uniform int alignment;
 uniform vec2 canvasSize;
 uniform vec2 imageSize;
-uniform int blurDirection;
-uniform float blurRadius;
 
 varying vec2 imagePosition;
-varying vec2 blurImageCoords[31];
 
 void main() {
   float padding;
@@ -28,30 +25,17 @@ void main() {
     padding = canvasSize.x - scaledImageSize.x;
   }
   imagePosition = vec2(position.x - padding, position.y) / scaledImageSize;
-
-  if (blurDirection == 1) {
-    float scaledRadius = blurRadius / imageSize.x / 15.0;
-
-    for (int i = -15; i <= 15; i++) {
-      blurImageCoords[i+15] = imagePosition + vec2(float(i) * scaledRadius, 0.0);
-    }
-  } else if (blurDirection == 2) {
-    float scaledRadius = blurRadius / imageSize.y / 15.0;
-
-    for (int i = -15; i <= 15; i++) {
-      blurImageCoords[i+15] = imagePosition + vec2(0.0, float(i) * scaledRadius);
-    }
-  }
 }
     </script>
     <script id="fragment" type="x-shader/x-fragment">
-precision mediump float;
+precision lowp float;
 
 uniform sampler2D image;
 
 varying vec2 imagePosition;
-varying vec2 blurImageCoords[31];
 uniform bool imageBlurred;
+uniform float blurRadius;
+uniform int blurDirection;
 uniform vec3 hue;
 
 float overlay(float a, float b) {
@@ -77,7 +61,13 @@ void main() {
     imageColor = vec4(0.0);
     for (int i = -15; i <= 15; i++) {
       float weight = 1.0 - abs(float(i) / 15.0);
-      vec4 sample = texture2D(image, blurImageCoords[i+15]);
+      float sampleOffset = (float(i) / 15.0) * blurRadius;
+      vec4 sample;
+      if (blurDirection == 1) {
+        sample = texture2D(image, imagePosition + vec2(sampleOffset, 0.0));
+      } else {
+        sample = texture2D(image, imagePosition + vec2(0.0, sampleOffset));
+      }
       sample.rgb *= sample.a;
       imageColor += sample * weight;
       total += weight;
@@ -185,18 +175,24 @@ var renderFrame = function(timestamp) {
   gl.uniform1i(alignmentLocation, 1);
   var blurDirection = gl.getUniformLocation(shaderProgram, "blurDirection");
   gl.uniform1i(blurDirection, Math.floor(timestamp / 500 % 2) + 1);
-  var blurRadius = gl.getUniformLocation(shaderProgram, "blurRadius");
+  var blurRadiusLocation = gl.getUniformLocation(shaderProgram, "blurRadius");
   var lastBeat = Math.floor(timestamp / 500) * 500;
   var timeSinceLast = timestamp - lastBeat;
-  gl.uniform1f(blurRadius, (Math.min(timeSinceLast, 150) - 150) / 150 * 48);
-  var imageBlurred = gl.getUniformLocation(shaderProgram, "imageBlurred");
-  gl.uniform1i(imageBlurred, 1);
+  var blurRadius = -(Math.min(timeSinceLast, 150) - 150) / 150 * 48;
+  if (blurDirection == 1) {
+    gl.uniform1f(blurRadiusLocation, blurRadius / img.naturalWidth);
+  } else {
+    gl.uniform1f(blurRadiusLocation, blurRadius / img.naturalHeight);
+  }
+    
+  var imageBlurredLocation = gl.getUniformLocation(shaderProgram, "imageBlurred");
+  gl.uniform1i(imageBlurredLocation, (blurRadius > 0) ? 1 : 0);
   var canvasSizeLocation = gl.getUniformLocation(shaderProgram, "canvasSize");
   gl.uniform2f(canvasSizeLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
   var imageSizeLocation = gl.getUniformLocation(shaderProgram, "imageSize");
   gl.uniform2f(imageSizeLocation, img.naturalWidth, img.naturalHeight);
   var hueLocation = gl.getUniformLocation(shaderProgram, "hue");
-  gl.uniform3f(hueLocation, 0.9372549019607843, 0.803921568627451, 0.7215686274509804);
+  gl.uniform3f(hueLocation, 0.8901960784313725, 0.1450980392156863, 0.4196078431372549);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   requestAnimationFrame(renderFrame);
 };
