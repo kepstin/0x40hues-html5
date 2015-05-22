@@ -173,12 +173,14 @@ var renderFrame = function(timestamp) {
   gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
   var alignmentLocation = gl.getUniformLocation(shaderProgram, "alignment");
   gl.uniform1i(alignmentLocation, 1);
-  var blurDirection = gl.getUniformLocation(shaderProgram, "blurDirection");
-  gl.uniform1i(blurDirection, Math.floor(timestamp / 500 % 2) + 1);
+  var blurDirection = Math.floor(timestamp / 500 % 2) + 1;
+  var blurDirectionLocation = gl.getUniformLocation(shaderProgram, "blurDirection");
+  gl.uniform1i(blurDirectionLocation, blurDirection);
   var blurRadiusLocation = gl.getUniformLocation(shaderProgram, "blurRadius");
   var lastBeat = Math.floor(timestamp / 500) * 500;
   var timeSinceLast = timestamp - lastBeat;
-  var blurRadius = -(Math.min(timeSinceLast, 150) - 150) / 150 * 48;
+  var blurRadius = -(Math.min(timeSinceLast, 200) - 200) / 200 * 64;
+  //var blurRadius = 64;
   if (blurDirection == 1) {
     gl.uniform1f(blurRadiusLocation, blurRadius / img.naturalWidth);
   } else {
