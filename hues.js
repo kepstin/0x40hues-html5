@@ -26,16 +26,29 @@
     /* The currently loaded list of songs */
     "songs": [],
 
+    /* Index of the current hue */
+    "hueIndex": null,
+    /* The current hue */
+    "hue": null,
+
     /* Index of the currently playing song */
     "songIndex": null,
+    /* The currently playing song */
+    "song": null,
 
     /* Index of the currently visible image */
     "imageIndex": null,
     /* The currently visible image */
     "image": null,
 
-    /* Whether the beat analysis function is active. */
-    "beatAnalysisRunning": false,
+    /* Handle for the beat analysis animation frame callback. */
+    "beatAnalysisHandle": null,
+
+    /* Length of a beat in this song */
+    "beatDuration": null,
+
+    /* Information about the current beat */
+    "beat": null,
 
     /* Event listener hookups for UI functionality. */
     "eventListeners": {
@@ -386,16 +399,12 @@
 
 
   var audioCtx = new AudioContext;
-  var currentSong = null;
   var currentBuildupSource = null;
   var currentBuildupBuffer = null;
   var currentBuildupStartTime = null;
   var currentLoopSource = null;
   var currentLoopBuffer = null;
   var currentLoopStartTime = null;
-  var currentBeatDuration = null;
-  var currentHueIndex = null;
-  var currentBeat = {buildup: null, loop: null};
 
   var gainNode = audioCtx.createGain();
 
@@ -675,7 +684,9 @@
         response.blob()
         .catch(reject)
         .then(function(blob) {
-          image["animation"].push(blob);
+          var img = document.createElement("img");
+          img.src = URL.createObjectURL(blob);
+          image["animation"].push(img);
           resolve(loadRespackImageAnimationFrame(respack, image, i + 1));
         });
 
@@ -877,10 +888,11 @@
       console.log(self["hues"]);
       randomHue();
 
+      /* Preset the currently selected song, but without starting playback */
       if (respack["songs"]) {
         addSongs(respack["name"]);
         self["songIndex"] = self["defaults"]["song"];
-        currentSong = self["songs"][self["defaults"]["song"]];
+        self["song"] = self["songs"][self["defaults"]["song"]];
       }
       console.log("Loaded songs:");
       console.log(self["songs"]);
@@ -932,8 +944,6 @@
     if (currentBuildupBuffer) {
       currentBuildupBuffer = null;
     }
-
-    currentSong = null;
   }
   Hues["stopSong"] = stopSong;
 
@@ -942,8 +952,8 @@
 
     console.log("New song index is " + songIndex);
     var song = self["songs"][songIndex];
-    currentSong = song;
     self["songIndex"] = songIndex;
+    self["song"] = song;
 
     console.log("Switching to " + song["title"]);
 
@@ -970,7 +980,7 @@
       Math.round(buildupDuration / beatDuration) + " beats)")
     console.log("Loop duration is " + loopDuration + " (" +
       song["rhythm"].length + " beats)")
-    currentBeatDuration = beatDuration;
+    self["beatDuration"] = beatDuration;
 
     if (buildupBuffer) {
       /* Songs that have buildups might be missing buildupRhythm, or
@@ -1012,25 +1022,33 @@
 
 
   var getCurrentSong = function() {
-    return currentSong;
+    return self["song"];
   }
   Hues["getCurrentSong"] = getCurrentSong;
 
   var getCurrentHue = function() {
-    var hues = self["hues"];
-    var hueInfo = {"index": currentHueIndex, "hue": hues[currentHueIndex]};
-    return hueInfo;
+    var index = self["hueIndex"];
+    var hue = self["hue"];
+    return {"index": index, "hue": hue};
   };
   Hues["getCurrentHue"] = getCurrentHue;
 
   var randomHue = function() {
     var hues = self["hues"];
-    var newHueIndex = Math.floor(Math.random() * (hues.length - 1));
-    if (newHueIndex >= currentHueIndex) {
-      newHueIndex += 1;
+    var index = self["hueIndex"];
+    var newIndex;
+    if (index === null) {
+      newIndex = Math.floor(Math.random() * hues.length);
+    } else {
+      newIndex = Math.floor(Math.random() * (hues.length - 1));
+      if (newIndex >= index) {
+        index += 1;
+      }
     }
-    currentHueIndex = newHueIndex;
-    return currentHueIndex;
+    var hue = hues[newIndex];
+    self["hueIndex"] = newIndex;
+    self["hue"] = hue;
+    callEventListeners("huechange", {"index": newIndex, "hue": hue});
   }
 
 
@@ -1044,7 +1062,6 @@
       if (self["autoMode"] == 2) {
         randomImage();
       }
-      callEventListeners("huechange", getCurrentHue());
       break;
     case 'o':
       /* Horizontal blur (bass)
@@ -1054,7 +1071,6 @@
       if (self["autoMode"] == 2) {
         randomImage();
       }
-      callEventListeners("huechange", getCurrentHue());
       break;
     case '-':
       /* No blur
@@ -1064,7 +1080,6 @@
       if (self["autoMode"] == 2) {
         randomImage();
       }
-      callEventListeners("huechange", getCurrentHue());
       break;
     case '+':
       /* Blackout
@@ -1080,7 +1095,6 @@
     case ':':
       /* Color only */
       randomHue();
-      callEventListeners("huechange", getCurrentHue());
       break;
     case '*':
       /* Image only */
@@ -1093,14 +1107,12 @@
        * Changes color.
        * Unlike 'x', does *not* change image on full auto. */
       randomHue();
-      callEventListeners("huechange", getCurrentHue());
       break;
     case 'O':
       /* Horizontal blur only
        * Changes color.
        * Unlike 'o', does *not* change image on full auto. */
       randomHue();
-      callEventListeners("huechange", getCurrentHue());
       break;
     case '~':
       /* Fade color
@@ -1119,54 +1131,65 @@
 
   var beatAnalyze = function() {
     if (!currentLoopBuffer) {
-      console.log("Stopping beat analysis");
-      self["beatAnalysisRunning"] = false;
-      currentBeat = { "buildup": null, "loop": null };
-      callEventListeners("beat", currentBeat);
+      stopBeatAnalysis();
       return;
     }
 
     var time = audioCtx.currentTime;
+    var prevBeat = self["beat"];
     var beat = null;
     var beatChar = null;
+    var song = self["song"];
+    var beatDuration = self["beatDuration"];
 
-    if (typeof(currentSong["buildupRhythm"]) !== "undefined" &&
+    if (typeof(song["buildupRhythm"]) !== "undefined" &&
         time < currentLoopStartTime) {
       /* In the buildup */
       beat = {
         "buildup": Math.floor((time - currentBuildupStartTime) /
-              currentBeatDuration),
+              beatDuration),
         "loop": null
       };
-      beatChar = currentSong["buildupRhythm"].charAt(beat["buildup"]);
+      beatChar = song["buildupRhythm"].charAt(beat["buildup"]);
     } else if (time >= currentLoopStartTime) {
       beat = {
         "buildup": null,
         "loop": Math.floor(
               (time - currentLoopStartTime) % currentLoopBuffer.duration /
-                currentBeatDuration)
+                beatDuration)
       };
-      beatChar = currentSong["rhythm"].charAt(beat["loop"]);
+      beatChar = song["rhythm"].charAt(beat["loop"]);
     } else {
       beat = { "buildup": null, "loop": null };
     }
 
-    if ((beat["buildup"] != currentBeat["buildup"]) ||
-          (beat["loop"] != currentBeat["loop"])) {
-      currentBeat = beat;
+    if ((beat["buildup"] != prevBeat["buildup"]) ||
+          (beat["loop"] != prevBeat["loop"])) {
+      self["beat"] = beat;
       doBeatEffect(beatChar);
-      callEventListeners("beat", currentBeat);
+      callEventListeners("beat", beat);
     }
 
-    window.requestAnimationFrame(beatAnalyze);
+    self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
   }
 
   var startBeatAnalysis = function() {
-    if (!self["beatAnalysisRunning"]) {
+    if (!self["beatAnalysisHandle"]) {
       console.log("Starting beat analysis");
-      window.requestAnimationFrame(beatAnalyze);
-      self["beatAnalysisRunning"] = true;
+      self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
     }
+  }
+
+  var stopBeatAnalysis = function() {
+    console.log("Stopping beat analysis");
+    var handle = self["beatAnalysisHandle"];
+    if (handle !== null) {
+      window.cancelAnimationFrame(self["beatAnalysisCallback"]);
+      self["beatAnalysisHandle"] = null;
+    }
+    var beat = { "buildup": null, "loop": null };
+    self["beat"] = beat;
+    callEventListeners("beat", beat);
   }
 
   var getBeatString = function() {
@@ -1176,23 +1199,25 @@
       length = 256;
     }
 
-    if (currentSong) {
-      if (currentBeat["buildup"] !== null &&
-            (typeof(currentSong["buildupRhythm"]) !== "undefined")) {
+    var song = self["song"];
+    var beat = self["beat"];
+    if (song) {
+      if (beat["buildup"] !== null &&
+            (typeof(song["buildupRhythm"]) !== "undefined")) {
         /* Currently in buildup */
-        beats += currentSong["buildupRhythm"].slice(currentBeat["buildup"]);
-      } else if (currentBeat["loop"] !== null) {
+        beats += song["buildupRhythm"].slice(beat["buildup"]);
+      } else if (beat["loop"] !== null) {
         /* Currently in loop */
-        beats += currentSong["rhythm"].slice(currentBeat["loop"]);
+        beats += song["rhythm"].slice(beat["loop"]);
       } else {
         /* Song is loaded but not yet playing? */
-        if (typeof(currentSong["buildupRhythm"]) !== "undefined") {
-          beats += currentSong["buildupRhythm"];
+        if (typeof(song["buildupRhythm"]) !== "undefined") {
+          beats += song["buildupRhythm"];
         }
       }
 
       while (beats.length < length) {
-        beats += currentSong["rhythm"];
+        beats += song["rhythm"];
       }
     }
 
