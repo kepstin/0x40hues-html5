@@ -59,9 +59,9 @@ void main() {
   if (imageBlurred) {
     float total = 0.0;
     imageColor = vec4(0.0);
-    for (int i = -15; i <= 15; i++) {
-      float weight = 1.0 - abs(float(i) / 15.0);
-      float sampleOffset = (float(i) / 15.0) * blurRadius;
+    for (int i = -8; i <= 8; i++) {
+      float weight = 1.0 - abs(float(i) / 8.0);
+      float sampleOffset = (float(i) / 8.0) * blurRadius;
       vec4 sample;
       if (blurDirection == 1) {
         sample = texture2D(image, imagePosition + vec2(sampleOffset, 0.0));
@@ -194,7 +194,7 @@ var renderFrame = function(timestamp) {
   var imageSizeLocation = gl.getUniformLocation(shaderProgram, "imageSize");
   gl.uniform2f(imageSizeLocation, img.naturalWidth, img.naturalHeight);
   var hueLocation = gl.getUniformLocation(shaderProgram, "hue");
-  gl.uniform3f(hueLocation, 0.8901960784313725, 0.1450980392156863, 0.4196078431372549);
+  gl.uniform3f(hueLocation, 0.6235294117647059, 0.8862745098039215, 0.7490196078431373);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   requestAnimationFrame(renderFrame);
 };
@@ -207,7 +207,7 @@ var imageLoaded = function() {
 
 
 var img = document.createElement("img");
-img.src = "respacks/0x40 Hues 5.0 Defaults/Images/Sakura.png";
+img.src = "respacks/0x40 Hues 5.0 Defaults/Images/Megumi.png";
 if (img.complete) {
   imageLoaded();
 } else {
