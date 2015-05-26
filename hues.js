@@ -46,19 +46,81 @@
 
     /* Length of a beat in this song */
     "beatDuration": null,
-
     /* Information about the current beat */
     "beat": null,
 
     /* Event listener hookups for UI functionality. */
     "eventListeners": {
+      /* Loading progress */
+
+      /* callback progressstart()
+       * Notify that a loading process has started, and a progress indicator
+       * should be displayed.
+       *
+       * No parameters
+       */
       "progressstart": [],
+
+      /* callback progress(completedWork, newWork)
+       * Update the progress indicator.
+       *
+       * completedWork: Integer number of jobs completed.
+       * newWork: Integer number of new (incomplete) jobs added
+       */
       "progress": [],
+
+      /* callback progressend()
+       * Notify that a loading process has completed.
+       * To get the actual status of the process, you have to resolve the
+       * promise from the call that initiated the loading process.
+       *
+       * No parameters
+       */
       "progressend": [],
+
+      /* User settings updates */
+
+      /* callback automodechange()
+       * The "auto mode" (automatic image advance) setting has changed.
+       */
       "automodechange": [],
+
+      /* Effects */
+
+      /* callback huechange(hueInfo)
+       * Called from beat analysis (in request animation frame context) prior
+       * to the beat callback if the new effect includes a hue change.
+       * Also called during initialization and when loading a respack.
+       *
+       * hueInfo: Same as the return value of getCurrentHue()
+       */
       "huechange": [],
-      "songchange": [],
+
+      /* callback imagechange(imageInfo)
+       * Indicates that currently displayed image has changed.
+       * This callback can be called in multiple contexts, depending on the
+       * current "autoMode" setting.
+       * If "full auto", this is called from beat analysis (in request
+       * animation frame context) prior to the beat callback if the new effect
+       * includes an image change.
+       * If "auto", this is called during the setup while switching songs.
+       * This is also called any time a user-initiated image change is done,
+       * via the changeImage(), prevImage(), or nextImage() functions.
+       * Also can be called during initialization or when loading a respack.
+       *
+       * imageInfo: Same as the return value of getCurrentImage()
+       */
       "imagechange": [],
+
+      /* callback songchange(songInfo)
+       * Indicated that the currently playing song has changed.
+       * This is called any time a user-initiated song change is done, via the
+       * changeSong(), prevSong(), or nextSong() functions.
+       * Also can be called during initialization or when loading a respack.
+       *
+       * songInfo: Same as the return value of getCurrentSong()
+       */
+      "songchange": [],
       "beat": [],
     }
   };
