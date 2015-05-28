@@ -1,5 +1,6 @@
 <hues>
-  <!-- List of hues from miniHues.js -->
+  <!-- List of hues from miniHues.js 
+       This corresponds to the "pastel" colorset in the flash. -->
   <hue name="Mahogany">#CD4A4A</hue>
   <hue name="Banana Mania">#FAE7B5</hue>
   <hue name="Beaver">#9F8170</hue>
@@ -21,7 +22,7 @@
   <hue name="Indigo">#5D76CB</hue>
   <hue name="Laser Lemon">#FDFC74</hue>
   <hue name="Lavender">#FCB4D5</hue>
-  <hue name="Mac and Cheese">#FFBD88</hue>
+  <hue name="Macaroni and Cheese">#FFBD88</hue>
   <hue name="Manatee">#979AAA</hue>
   <hue name="Mango Tango">#FF8243</hue>
   <hue name="Melon">#FDBCB4</hue>
