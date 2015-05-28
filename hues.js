@@ -47,7 +47,7 @@
     /* Length of a beat in this song */
     "beatDuration": null,
     /* Information about the current beat */
-    "beat": null,
+    "beat": { "buildup": null, "loop": null },
 
     /* Event listener hookups for UI functionality. */
     "eventListeners": {
