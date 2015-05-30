@@ -1260,7 +1260,9 @@
        * Sort of like the opposite of a regular blackout:
        * It changes the color and image, but it does not do a blur.
        * The same blackout fadein applies, which means the new image is
-       * visible for a frame or two.
+       * visible for a frame or two at the start of the effect.
+       * The blackout lasts for 1/1.7 of a beat length; the image is visible
+       * for the remainder of the beat.
        */
       self.callEventListeners("blackoutchange", false);
       randomHue();
