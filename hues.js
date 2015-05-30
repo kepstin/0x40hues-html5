@@ -1,56 +1,58 @@
 (function() {
   "use strict";
   var self = {
-    "defaults": {
-      "respack": encodeURIComponent("0x40 Hues 5.0 Defaults"),
+    defaults: {
+      respack: encodeURIComponent("0x40 Hues 5.0 Defaults"),
       /* In the default respack, this is "weapon" */
-      "song": 18,
-      "hues": "builtin",
+      song: 18,
+      hues: "builtin",
     },
 
     /* Values are 0: normal, 1: auto, 2: full auto
      * normal never changes image.
-     * auto changes image only on song start or loop
+     * auto changes image only on song change or loop
      * full auto changes image according to song rhythm
      */
-    "autoMode": 2,
+    autoMode: 2,
 
     /* All the respacks that are currently loaded
      * Respacks can contain hues, images, and songs. */
-    "respacks": {},
+    respacks: {},
 
-    /* The currently loaded list of hues */
-    "hues": [],
-    /* The currently loaded list of images */
-    "images": [],
-    /* The currently loaded list of songs */
-    "songs": [],
+    /* The currently active list of hues */
+    hues: [],
+    /* The currently active list of images */
+    images: [],
+    /* The currently active list of songs */
+    songs: [],
 
     /* Index of the current hue */
-    "hueIndex": null,
+    hueIndex: null,
     /* The current hue */
-    "hue": null,
+    hue: null,
 
     /* Index of the currently playing song */
-    "songIndex": null,
+    songIndex: null,
     /* The currently playing song */
-    "song": null,
+    song: null,
 
     /* Index of the currently visible image */
-    "imageIndex": null,
+    imageIndex: null,
     /* The currently visible image */
-    "image": null,
+    image: null,
 
     /* Handle for the beat analysis animation frame callback. */
-    "beatAnalysisHandle": null,
+    beatAnalysisHandle: null,
 
-    /* Length of a beat in this song */
-    "beatDuration": null,
+    /* Length of a beat in the current song */
+    beatDuration: null,
     /* Information about the current beat */
-    "beat": { "buildup": null, "loop": null },
+    beat: { time: 0, buildup: null, loop: null },
+    /* The beat string, including the current beat */
+    beatString: "",
 
     /* Event listener hookups for UI functionality. */
-    "eventListeners": {
+    eventListeners: {
       /* Loading progress */
 
       /* callback progressstart()
@@ -59,7 +61,7 @@
        *
        * No parameters
        */
-      "progressstart": [],
+      progressstart: [],
 
       /* callback progress(completedWork, newWork)
        * Update the progress indicator.
@@ -67,7 +69,7 @@
        * completedWork: Integer number of jobs completed.
        * newWork: Integer number of new (incomplete) jobs added
        */
-      "progress": [],
+      progress: [],
 
       /* callback progressend()
        * Notify that a loading process has completed.
@@ -76,27 +78,35 @@
        *
        * No parameters
        */
-      "progressend": [],
+      progressend: [],
 
       /* User settings updates */
 
-      /* callback automodechange()
+      /* callback automodechange(autoMode)
        * The "auto mode" (automatic image advance) setting has changed.
+       * Only called in response the setAutoMode() function being called.
+       *
+       * autoMode: The name of the "auto mode" that's been selected.
        */
-      "automodechange": [],
+      automodechange: [],
 
-      /* Effects */
+      /* Active media and effects */
 
-      /* callback huechange(hueInfo)
+      /* callback huechange(hueInfo, beatTime, fadeDuration)
        * Called from beat analysis (in request animation frame context) prior
        * to the beat callback if the new effect includes a hue change.
        * Also called during initialization and when loading a respack.
        *
        * hueInfo: Same as the return value of getCurrentHue()
+       * beatTime: If the hue change was triggered by a beat effect, the
+       *   timestamp that the beat occurred on. Otherwise, null.
+       * fadeDuration: If the hue change is the result of a fade effect, the
+       *   duration that the fade will last for. Only valid if beatTime is not
+       *   null.
        */
-      "huechange": [],
+      huechange: [],
 
-      /* callback imagechange(imageInfo)
+      /* callback imagechange(imageInfo, beatTime)
        * Indicates that currently displayed image has changed.
        * This callback can be called in multiple contexts, depending on the
        * current "autoMode" setting.
@@ -109,8 +119,10 @@
        * Also can be called during initialization or when loading a respack.
        *
        * imageInfo: Same as the return value of getCurrentImage()
+       * beatTime: If the image change was triggered by a beat effect, the
+       *   timestamp that the beat occurred on. Otherwise, null.
        */
-      "imagechange": [],
+      imagechange: [],
 
       /* callback songchange(songInfo)
        * Indicated that the currently playing song has changed.
@@ -120,46 +132,130 @@
        *
        * songInfo: Same as the return value of getCurrentSong()
        */
-      "songchange": [],
-      "beat": [],
+      songchange: [],
+
+      /* callback blackoutchange(blackoutActive)
+       * Indicates that the current (long) blackout state has changed.
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback if the new effect causes a blackout to
+       * start or end.
+       *
+       * blackoutActive: boolean value indicating whether the blackout is
+       *   currently active.
+       */
+      blackoutchange: [],
+
+      beat: [],
+      frame: [],
+    },
+
+    /* Call event listeners
+     * First parameter is the name of the event.
+     * Any additional parameters after the first are passed throught to the
+     * callback function.
+     */
+    callEventListeners: function(ev) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      self.eventListeners[ev].forEach(function(callback) {
+        callback.apply(null, args);
+      });
+    },
+
+    /* User settings accessors */
+
+    /* Hues.setAutoMode(autoMode)
+     * Select when to automatically change images.
+     *
+     * autoMode: One of the following values:
+     *     * "normal": Never automatically change images.
+     *     * "auto": Change image when the song loops or changes.
+     *     * "full auto": Image changes are managed by the song rhythm string.
+     *
+     * No return value.
+     */
+    setAutoMode: function(autoMode) {
+      switch (autoMode) {
+      case "normal": self.autoMode = 0; break;
+      case "auto": self.autoMode = 1; break;
+      case "full auto": self.autoMode = 2; break;
+      default:
+        throw Error("Unknown auto mode: " + autoMode);
+      }
+      callEventListeners("automodechange", autoMode);
+    },
+
+    /* Hues.getAutoMode()
+     * Get the current image changing mode.
+     *
+     * Returns the string name of the mode (see setAutoMode() for the list)
+     */
+    getAutoMode: function() {
+      switch (self.autoMode) {
+      case 0: return "normal";
+      case 1: return "auto";
+      case 2: return "full auto";
+      }
+    },
+
+    /* Active media controls */
+
+    /* Effect information accessors */
+
+    /* Hues.getBeatString(length)
+     * Get the string of characters representing the rhythm, starting at the
+     * current beat.
+     *
+     * length: Minimum length of the returned string. The rhythm will be looped
+     *   until the string is at least this long. Optional, defaults to 256.
+     *
+     * Returns a string of beat characters - unless no song is loaded. In that
+     *   case, it returns "" (empty string).
+     */
+    getBeatString: function() {
+      var length = arguments[0];
+      if (typeof(length) === "undefined") {
+        length = 256;
+      }
+      var song = self.song;
+      var beatString = "";
+      if (song) {
+        beatString = self.beatString;
+        while (beatString.length < length) {
+          beatString += song.rhythm;
+        }
+      }
+
+      return beatString;
+    },
+
+    /* Analysis helper functions */
+
+    updateBeatString: function() {
+      var song = self.song;
+      if (!song) {
+        self.beatString = "";
+        return;
+      }
+
+      var beatString = "";
+      var beat = self.beat;
+
+      if (beat.buildup !== null &&
+          (typeof(song.buildupRhythm) !== "undefined") ) {
+          /* Currently in buildup */
+        beatString += song.buildupRhythm.slice(beat.buildup);
+      } else if (beat.loop !== null) {
+        beatString += song.rhythm.slice(beat.loop);
+      }
+
+      /* Add a copy of the loop rhythm to make sure fades calculate correctly */
+      beatString += song.rhythm;
+
+      self.beatString = beatString;
     }
   };
 
-  /* Hues.setAutoMode(autoMode) 
-   * Select when to automatically change images.
-   *
-   * autoMode: One of the following values:
-   *     * "normal": Never automatically change images.
-   *     * "auto": Change image when the song loops or changes.
-   *     * "full auto": Image changes are managed by the song rhythm string.
-   *
-   * No return value.
-   */
-  var setAutoMode = function(autoMode) {
-    switch (autoMode) {
-    case "normal":
-      self["autoMode"] = 0; break;
-    case "auto":
-      self["autoMode"] = 1; break;
-    case "full auto":
-      self["autoMode"] = 2; break;
-    default:
-      throw Error("Unknown auto mode: " + autoMode);
-    }
-  }
 
-  /* Hues.getAutoMode()
-   * Get the current image changing mode.
-   *
-   * Returns the string name of the mode (see setAutoMode() for the list)
-   */
-  var getAutoMode = function() {
-    switch (self["autoMode"]) {
-    case 0: return "normal";
-    case 1: return "auto";
-    case 2: return "full auto";
-    }
-  };
 
   /* Hues.addHues(respackName, [huesList])
    * Add hues from a loaded respack to the active hues list.
@@ -345,7 +441,7 @@
     self["imageIndex"] = imageIndex;
     self["image"] = image;
 
-    callEventListeners("imagechange", image);
+    self.callEventListeners("imagechange", image);
   }
 
   /* Hues.randomImage()
@@ -442,8 +538,9 @@
 
   /* The public object */
   var Hues = {
-    "setAutoMode": setAutoMode,
-    "getAutoMode": getAutoMode,
+    "setAutoMode": self.setAutoMode,
+    "getAutoMode": self.getAutoMode,
+    "getBeatString": self.getBeatString,
     "addHues": addHues,
     "addSongs": addSongs,
     "playSong": playSong,
@@ -472,13 +569,6 @@
 
   Hues["respack"] = {};
 
-  /* Call event listeners */
-  var callEventListeners = function(ev) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    self["eventListeners"][ev].forEach(function(callback) {
-      callback.apply(null, args);
-    });
-  };
 
   var loadRespackInfo = function(respack) {
     return new Promise(function(resolve, reject) {
@@ -698,10 +788,10 @@
             }
 
             respack["songs"].push(song);
-            callEventListeners("progress", 0, 1);
+            self.callEventListeners("progress", 0, 1);
             songPromises.push(loadRespackSongMedia(respack, song)
               .then(function() {
-                callEventListeners("progress", 1, 0);
+                self.callEventListeners("progress", 1, 0);
               })
             );
 
@@ -840,10 +930,10 @@
             }
 
             respack["images"].push(image);
-            callEventListeners("progress", 0, 1);
+            self.callEventListeners("progress", 0, 1);
             imagePromises.push(loadRespackImageMedia(respack, image)
               .then(function() {
-                callEventListeners("progress", 1, 0);
+                self.callEventListeners("progress", 1, 0);
               })
             );
 
@@ -871,13 +961,13 @@
       };
 
       console.log("Loading respack at " + uri);
-      callEventListeners("progress", 0, 4);
+      self.callEventListeners("progress", 0, 4);
 
       var respackInfo = loadRespackInfo(respack);
       
       respackInfo.then(function(respack) {
         console.log("Loaded respack info for " + respack["name"]);
-        callEventListeners("progress", 1, 0);
+        self.callEventListeners("progress", 1, 0);
       });
 
       var respackHues = respackInfo.then(loadRespackHues);
@@ -888,7 +978,7 @@
         } else {
           console.log("Respack contains no hues: " + respack["name"]);
         }
-        callEventListeners("progress", 1, 0);
+        self.callEventListeners("progress", 1, 0);
       });
 
       var respackSongs = respackInfo.then(loadRespackSongs);
@@ -899,7 +989,7 @@
         } else {
           console.log("Respack contains no songs: " + respack["name"]);
         }
-        callEventListeners("progress", 1, 0);
+        self.callEventListeners("progress", 1, 0);
       });
 
       var respackImages = respackInfo.then(loadRespackImages);
@@ -910,7 +1000,7 @@
         } else {
           console.log("Respack has no images: " + respack["name"]);
         }
-        callEventListeners("progress", 1, 0);
+        self.callEventListeners("progress", 1, 0);
       });
       Promise.all([respackHues, respackSongs, respackImages])
       .catch(reject)
@@ -926,7 +1016,7 @@
   Hues["loadRespack"] = loadRespack;
 
   var loadDefaultRespack = function() {
-    callEventListeners("progressstart");
+    self.callEventListeners("progressstart");
     var builtin = loadRespack("respacks/builtin");
 
     var respackURI = self["defaults"]["respack"];
@@ -969,7 +1059,7 @@
       }
       console.log("Loaded images:");
       console.log(self["images"]);
-      callEventListeners("progressend");
+      self.callEventListeners("progressend");
     });
   }
   Hues["loadDefaultRespack"] = loadDefaultRespack;
@@ -1074,9 +1164,11 @@
     currentBuildupStartTime = buildupStart;
     currentLoopStartTime = loopStart;
 
+    self.updateBeatString();
+
     startBeatAnalysis();
 
-    callEventListeners("songchange", song);
+    self.callEventListeners("songchange", song);
 
     return Promise.resolve(song);
   };
@@ -1110,16 +1202,25 @@
     var hue = hues[newIndex];
     self["hueIndex"] = newIndex;
     self["hue"] = hue;
-    callEventListeners("huechange", {"index": newIndex, "hue": hue});
+    self.callEventListeners("huechange", {"index": newIndex, "hue": hue});
   }
 
 
-  var doBeatEffect = function(beatChar) {
-    switch (beatChar) {
+  var doBeatEffect = function() {
+    var beatString = self.beatString;
+    if (beatString == "") {
+      return;
+    }
+
+    var current = beatString[0];
+    var rest = beatString.slice(1);
+
+    switch (current) {
     case 'x':
       /* Vertical blur (snare) 
        * Changes color.
        * Changes image on full auto. */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       if (self["autoMode"] == 2) {
         randomImage();
@@ -1129,6 +1230,7 @@
       /* Horizontal blur (bass)
        * Changes color.
        * Changes image on full auto. */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       if (self["autoMode"] == 2) {
         randomImage();
@@ -1138,6 +1240,7 @@
       /* No blur
        * Changes color.
        * Changes image on full auto. */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       if (self["autoMode"] == 2) {
         randomImage();
@@ -1145,21 +1248,34 @@
       break;
     case '+':
       /* Blackout
-       * Blackout lasts until next effect. */
+       * Blackout lasts until next effect.
+       * Does not change color or image - but it *does* do a horizontal blur.
+       * Blackout fades in over the course of ~2 frames (+0.4 alpha per frame)
+       * This is about 40msec.
+       */
+      self.callEventListeners("blackoutchange", true);
       break;
     case '|':
       /* Short blackout
-       * Changes image on full auto‽ */
+       * Sort of like the opposite of a regular blackout:
+       * It changes the color and image, but it does not do a blur.
+       * The same blackout fadein applies, which means the new image is
+       * visible for a frame or two.
+       */
+      self.callEventListeners("blackoutchange", false);
+      randomHue();
       if (self["autoMode"] == 2) {
         randomImage();
       }
       break;
     case ':':
       /* Color only */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       break;
     case '*':
       /* Image only */
+      self.callEventListeners("blackoutchange", false);
       if (self["autoMode"] == 2) {
         randomImage();
       }
@@ -1168,22 +1284,26 @@
       /* Vertical blur only
        * Changes color.
        * Unlike 'x', does *not* change image on full auto. */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       break;
     case 'O':
       /* Horizontal blur only
        * Changes color.
        * Unlike 'o', does *not* change image on full auto. */
+      self.callEventListeners("blackoutchange", false);
       randomHue();
       break;
     case '~':
       /* Fade color
        * Color fade duration is until next effect. */
+      self.callEventListeners("blackoutchange", false);
       break;
     case '=':
       /* Fade and change image
        * Image change is immediate.
        * Color fade duration is until next effect. */
+      self.callEventListeners("blackoutchange", false);
       if (self["autoMode"] == 2) {
         randomImage();
       }
@@ -1198,40 +1318,42 @@
     }
 
     var time = audioCtx.currentTime;
-    var prevBeat = self["beat"];
-    var beat = null;
-    var beatChar = null;
-    var song = self["song"];
-    var beatDuration = self["beatDuration"];
+    var song = self.song;
+    var prevBeat = self.beat;
+    var beat = { time: 0, buildup: null, loop: null };
+    var beatDuration = self.beatDuration;
 
-    if (typeof(song["buildupRhythm"]) !== "undefined" &&
+    if (typeof(song.buildupRhythm) !== "undefined" &&
         time < currentLoopStartTime) {
-      /* In the buildup */
-      beat = {
-        "buildup": Math.floor((time - currentBuildupStartTime) /
-              beatDuration),
-        "loop": null
-      };
-      beatChar = song["buildupRhythm"].charAt(beat["buildup"]);
+      beat.buildup = Math.floor((time - currentBuildupStartTime) /
+          beatDuration);
     } else if (time >= currentLoopStartTime) {
-      beat = {
-        "buildup": null,
-        "loop": Math.floor(
-              (time - currentLoopStartTime) % currentLoopBuffer.duration /
-                beatDuration)
-      };
-      beatChar = song["rhythm"].charAt(beat["loop"]);
-    } else {
-      beat = { "buildup": null, "loop": null };
+      beat.loop = Math.floor((time - currentLoopStartTime) %
+          currentLoopBuffer.duration / beatDuration);
     }
 
-    if ((beat["buildup"] != prevBeat["buildup"]) ||
-          (beat["loop"] != prevBeat["loop"])) {
-      self["beat"] = beat;
-      doBeatEffect(beatChar);
-      callEventListeners("beat", beat);
+    // If we're still in the same beat, bail out early.
+    if ((beat.buildup == prevBeat.buildup) &&
+        (beat.loop == prevBeat.loop)) {
+      self.callEventListeners("frame", time);
+      self.beatAnalysisHandle = window.requestAnimationFrame(beatAnalyze);
+      return;
     }
 
+    // For the moment, I'm using the time when I realize the beat changed
+    // as the time to use for effect start.
+    // TODO: Do I want to calculate the exact time that the beat would have
+    // started on instead?
+    beat.time = time;
+
+    self.beat = beat;
+    self.updateBeatString();
+
+    doBeatEffect();
+
+    self.callEventListeners("beat", beat);
+
+    self.callEventListeners("frame", time);
     self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
   }
 
@@ -1251,41 +1373,9 @@
     }
     var beat = { "buildup": null, "loop": null };
     self["beat"] = beat;
-    callEventListeners("beat", beat);
+    self.callEventListeners("beat", beat);
   }
 
-  var getBeatString = function() {
-    var beats = "";
-    var length = arguments[0];
-    if (typeof(length) === "undefined") {
-      length = 256;
-    }
-
-    var song = self["song"];
-    var beat = self["beat"];
-    if (song) {
-      if (beat["buildup"] !== null &&
-            (typeof(song["buildupRhythm"]) !== "undefined")) {
-        /* Currently in buildup */
-        beats += song["buildupRhythm"].slice(beat["buildup"]);
-      } else if (beat["loop"] !== null) {
-        /* Currently in loop */
-        beats += song["rhythm"].slice(beat["loop"]);
-      } else {
-        /* Song is loaded but not yet playing? */
-        if (typeof(song["buildupRhythm"]) !== "undefined") {
-          beats += song["buildupRhythm"];
-        }
-      }
-
-      while (beats.length < length) {
-        beats += song["rhythm"];
-      }
-    }
-
-    return beats;
-  };
-  Hues["getBeatString"] = getBeatString;
 
   window.Hues = Hues;
 })();

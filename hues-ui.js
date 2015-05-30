@@ -273,7 +273,16 @@
     Hues.addEventListener("imagechange", updateImage);
 
     var ctx = canvas.getContext("2d");
+    var blackout = false;
     var updateHue = function(hueInfo) {
+      if (blackout) {
+        ctx.save();
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        return;
+      }
+
       ctx.save();
 
       ctx.fillStyle = "white";
@@ -302,6 +311,13 @@
     };
     updateHue(Hues.getCurrentHue());
     Hues.addEventListener("huechange", updateHue);
+
+    var updateBlackout = function(newBlackout) {
+      blackout = newBlackout;
+      updateHue(Hues.getCurrentHue());
+    };
+    Hues.addEventListener("blackoutchange", updateBlackout);
+
 
     return Promise.resolve(rootElement);
   };
