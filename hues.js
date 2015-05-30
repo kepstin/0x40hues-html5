@@ -72,6 +72,9 @@
     /* The beat string, including the current beat */
     beatString: "",
 
+    /* Saved promises that can be used to hook into various loading states. */
+    setupPromise: null,
+
     /* Event listener hookups for UI functionality. */
     eventListeners: {
       /* Loading progress */
@@ -258,7 +261,7 @@
       default:
         throw Error("Unknown auto mode: " + autoMode);
       }
-      callEventListeners("automodechange", autoMode);
+      self.callEventListeners("automodechange", autoMode);
     },
 
     /* Hues.getAutoMode()
@@ -275,6 +278,57 @@
     },
 
     /* Active media controls */
+
+    /* Hues.prevImage()
+     * Switch to the previous image in the active images list.
+     * It doesn't make sense to call this if you're in "full auto" mode...
+     *
+     * No return value.
+     */
+    prevImage: function() {
+      var images = self.images;
+      var i = self.imageIndex - 1;
+      if (i < 0) {
+        i = images.length - 1;
+      }
+
+      changeImage(i);
+    },
+
+    /* Hues.nextImage()
+     * Switch to the next image in the active images list.
+     * It doesn't make sense to call this if you're in "full auto" mode...
+     *
+     * No return value.
+     */
+    nextImage: function() {
+      var images = self.images;
+      var i = self.imageIndex + 1;
+      if (i >= images.length) {
+        i = 0;
+      }
+
+      changeImage(i);
+    },
+
+    /* Hues.randomSong()
+     * Select a new image, randomly.
+     *
+     * No return value.
+     */
+    randomSong: function() {
+      var songs = self.songs;
+      var i;
+      if (self.songIndex === null) {
+        i = Math.floor(Math.random() * songs.length);
+      } else {
+        i = Math.floor(Math.random() * (songs.length - 1));
+        if (i >= self.songIndex) {
+          i += 1;
+        }
+      }
+      changeSong(i);
+    },
 
     /* Effect information accessors */
 
@@ -329,6 +383,12 @@
       beatString += song.rhythm;
 
       self.beatString = beatString;
+    },
+
+    /* Promise accessors */
+
+    setupComplete: function() {
+      return self.setupPromise;
     }
   };
 
@@ -518,7 +578,7 @@
     self["imageIndex"] = imageIndex;
     self["image"] = image;
 
-    self.callEventListeners("imagechange", image);
+    self.callEventListeners("imagechange", image, audioCtx.currentTime);
   }
 
   /* Hues.randomImage()
@@ -617,7 +677,11 @@
   var Hues = {
     setAutoMode: self.setAutoMode,
     getAutoMode: self.getAutoMode,
+    prevImage: self.prevImage,
+    nextImage: self.nextImage,
+    randomSong: self.randomSong,
     getBeatString: self.getBeatString,
+    setupComplete: self.setupComplete,
     addHues: addHues,
     addSongs: addSongs,
     playSong: playSong,
@@ -1092,6 +1156,7 @@
   }
   Hues["loadRespack"] = loadRespack;
 
+  // TODO: The is basically the main setup function?
   var loadDefaultRespack = function() {
     self.callEventListeners("progressstart");
     var builtin = loadRespack("respacks/builtin");
@@ -1103,7 +1168,7 @@
 
     var respack = loadRespack(respackURI);
 
-    return Promise.all([builtin, respack])
+    var setupPromise = Promise.all([builtin, respack])
     .then(function(respacks) {
       var builtin = respacks[0];
       var respack = respacks[1];
@@ -1138,6 +1203,9 @@
       console.log(self["images"]);
       self.callEventListeners("progressend");
     });
+
+    self.setupPromise = setupPromise;
+    return setupPromise;
   }
   Hues["loadDefaultRespack"] = loadDefaultRespack;
 
@@ -1299,7 +1367,7 @@
     }
 
     /* All non-null beat characters cancel blackout */
-    self.callEventListeners("blackouteffect", false);
+    self.callEventListeners("blackouteffect", false, beat.time);
 
     /* Here's the current annotated list of beat effects:
      *
@@ -1366,7 +1434,7 @@
 
     /* Standard blackout */
     if (current == "+") {
-      self.callEventListeners("blackouteffect", true);
+      self.callEventListeners("blackouteffect", true, beat.time);
     }
 
     /* Short blackout */

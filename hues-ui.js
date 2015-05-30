@@ -35,11 +35,7 @@
     modeDiv.appendChild(modeField);
 
     var updateModeField = function(autoMode) {
-      if (autoMode) {
-        modeField.textContent = "FULL AUTO";
-      } else {
-        modeField.textContent = "NORMAL";
-      }
+      modeField.textContent = autoMode.toUpperCase();
     };
     updateModeField(Hues.getAutoMode());
     Hues.addEventListener("automodechange", updateModeField);
@@ -234,7 +230,7 @@
     });
   }
 
-  var setupCanvas = function(rootElement) {
+  var setupEffectCanvas = function(rootElement) {
     var canvas = document.createElement("canvas");
     canvas.style.position = "absolute";
     canvas.style.display = "block";
@@ -248,124 +244,52 @@
     canvas.height = rootElement.clientHeight;
     rootElement.appendChild(canvas);
 
-    var renderNeeded = true;
-
-    var resizeCanvas = function() {
-      canvas.width = rootElement.clientWidth;
-      canvas.height = rootElement.clientHeight;
-      renderNeeded = true;
-    };
-    window.addEventListener('resize', resizeCanvas, false);
-
-    var currentImageInfo = null;
-    var imageCanvas = document.createElement("canvas");
-    var imageCtx = imageCanvas.getContext("2d");
-    var updateImage = function(imageInfo) {
-      var img = imageInfo["img"];
-      if (typeof(img) === "undefined") {
-        return;
-      }
-      currentImageInfo = imageInfo;
-      imageCanvas.width = img.width;
-      imageCanvas.height = img.height;
-      imageCtx.fillStyle = "white";
-      imageCtx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
-      imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
-
-      renderNeeded = true;
-    };
-    updateImage(Hues.getCurrentImage());
-    Hues.addEventListener("imagechange", updateImage);
-
-    var hue = null;
-    var updateHue = function(hueInfo) {
-      hue = hueInfo;
-      renderNeeded = true;
-    }
-    updateHue(Hues.getCurrentHue());
-    Hues.addEventListener("huechange", updateHue);
-
-    var blackout = false;
-    var updateBlackout = function(newBlackout) {
-      blackout = newBlackout;
-      renderNeeded = true;
-    };
-    Hues.addEventListener("blackouteffect", updateBlackout);
-
-    var shortblackout = false;
-    var shortblackoutend = 0;
-    var updateShortBlackout = function(beatTime, duration) {
-      blackout = true;
-      shortblackout = true;
-      shortblackoutend = beatTime + duration;
-      renderNeeded = true;
-    };
-    Hues.addEventListener("shortblackouteffect", updateShortBlackout);
-
-    var ctx = canvas.getContext("2d");
-
-    var render = function(time) {
-      /* Check if the short blackout has ended */
-      if (shortblackout) {
-        if (time > shortblackoutend) {
-          shortblackout = false;
-          blackout = false;
-        }
-      }
-
-      if (blackout) {
-        ctx.save();
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-        return;
-      }
-
-      ctx.save();
-
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      var scaledWidth = (canvas.height / imageCanvas.height) *
-          imageCanvas.width;
-      switch (currentImageInfo["align"]) {
-      case "left":
-        ctx.drawImage(imageCanvas, 0, 0, scaledWidth, canvas.height);
-        break;
-      case "right":
-        ctx.drawImage(imageCanvas, canvas.width - scaledWidth, 0,
-            scaledWidth, canvas.height);
-        break;
-      case "center":
-        ctx.drawImage(imageCanvas, (canvas.width - scaledWidth) / 2, 0,
-            scaledWidth, canvas.height);
-        break;
-      }
-      ctx.globalCompositeOperation = "hard-light";
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = hue["hue"]["hex"];
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    };
-    render(0);
-    Hues.addEventListener("frame", render);
-
-    return Promise.resolve(rootElement);
-  };
+    return window.HuesEffect.setup(window.Hues, canvas)
+      .then(function() { return rootElement; });
+  }
 
   var setupKeyHandlers = function(rootElement) {
     /* Even though we have the root element, keys are going to be installed
      * on the window. */
 
+    window.addEventListener("keypress", function(e) {
+      switch (e.keyCode) {
+      case 70:
+      case 102:
+        console.log("F - Toggle AutoMode");
+        if (Hues.getAutoMode() == "normal") {
+          Hues.setAutoMode("full auto");
+        } else {
+          Hues.setAutoMode("normal");
+        }
+        break;
+      }
+    });
     /* Arrow keys don't have "press" events */
     window.addEventListener("keyup", function(e) {
-      if (e.keyCode == 38) {
+      switch (e.keyCode) {
+      case 16:
+        console.log("Shift - Random Song");
+        Hues.randomSong();
+        break;
+      case 37:
+        console.log("Left Arrow - Previous Image");
+        Hues.setAutoMode("normal");
+        Hues.prevImage();
+        break;
+      case 38:
         console.log("Up Arrow - Next Song");
         Hues.nextSong();
-      } else if (e.keyCode == 40) {
+        break;
+      case 39:
+        console.log("Right Arrow - Next Image");
+        Hues.setAutoMode("normal");
+        Hues.nextImage();
+        break;
+      case 40:
         console.log("Down Arrow - Previous Song");
-        /* Down Arrow - Previous Song */
         Hues.prevSong();
+        break;
       }
     });
   }
@@ -377,7 +301,7 @@
 
     return Promise.all([rootElement, progress, respack])
     .then(function(args) { return args[0]; })
-    .then(setupCanvas)
+    .then(setupEffectCanvas)
     .then(setupStatusArea)
     .then(setupKeyHandlers)
     .then(function() {
