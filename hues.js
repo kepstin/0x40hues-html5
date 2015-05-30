@@ -1,3 +1,24 @@
+/* Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 (function() {
   "use strict";
   var self = {
@@ -134,7 +155,7 @@
        */
       songchange: [],
 
-      /* callback blackoutchange(blackoutActive)
+      /* callback blackoutchange(blackoutActive, beatTime)
        * Indicates that the current (long) blackout state has changed.
        * This is called from beat analysis (in request animation frame context)
        * prior to the beat callback if the new effect causes a blackout to
@@ -142,10 +163,25 @@
        *
        * blackoutActive: boolean value indicating whether the blackout is
        *   currently active.
+       * beatTime: The timestamp of the beat that the blackout occured on.
        */
       blackoutchange: [],
 
+      /* callback beat(beatInfo)
+       * Called when the beat has changed, after all of the callbacks to update
+       * effects, but before the frame callback.
+       *
+       * beatInfo: Same as the return value of getCurrentBeat()
+       */
       beat: [],
+
+      /* callback frame(currentTime)
+       * Called every frame (request animation frame context), with the
+       * timestamp from the audio context, useful for coordinating effect
+       * rendering.
+       * If a new beat occurred on this frame, this callback is called after
+       * all of the effect updates and the beat callback.
+       */
       frame: [],
     },
 

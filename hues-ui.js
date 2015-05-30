@@ -248,9 +248,12 @@
     canvas.height = rootElement.clientHeight;
     rootElement.appendChild(canvas);
 
+    var renderNeeded = true;
+
     var resizeCanvas = function() {
       canvas.width = rootElement.clientWidth;
       canvas.height = rootElement.clientHeight;
+      renderNeeded = true;
     };
     window.addEventListener('resize', resizeCanvas, false);
 
@@ -268,13 +271,30 @@
       imageCtx.fillStyle = "white";
       imageCtx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
       imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+
+      renderNeeded = true;
     };
     updateImage(Hues.getCurrentImage());
     Hues.addEventListener("imagechange", updateImage);
 
-    var ctx = canvas.getContext("2d");
-    var blackout = false;
+    var hue = null;
     var updateHue = function(hueInfo) {
+      hue = hueInfo;
+      renderNeeded = true;
+    }
+    updateHue(Hues.getCurrentHue());
+    Hues.addEventListener("huechange", updateHue);
+
+    var blackout = false;
+    var updateBlackout = function(newBlackout) {
+      blackout = newBlackout;
+      renderNeeded = true;
+    };
+    Hues.addEventListener("blackoutchange", updateBlackout);
+
+    var ctx = canvas.getContext("2d");
+
+    var render = function(time) {
       if (blackout) {
         ctx.save();
         ctx.fillStyle = "black";
@@ -305,19 +325,12 @@
       }
       ctx.globalCompositeOperation = "hard-light";
       ctx.globalAlpha = 0.7;
-      ctx.fillStyle = hueInfo["hue"]["hex"];
+      ctx.fillStyle = hue["hue"]["hex"];
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
     };
-    updateHue(Hues.getCurrentHue());
-    Hues.addEventListener("huechange", updateHue);
-
-    var updateBlackout = function(newBlackout) {
-      blackout = newBlackout;
-      updateHue(Hues.getCurrentHue());
-    };
-    Hues.addEventListener("blackoutchange", updateBlackout);
-
+    render(0);
+    Hues.addEventListener("frame", render);
 
     return Promise.resolve(rootElement);
   };
