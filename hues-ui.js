@@ -290,11 +290,29 @@
       blackout = newBlackout;
       renderNeeded = true;
     };
-    Hues.addEventListener("blackoutchange", updateBlackout);
+    Hues.addEventListener("blackouteffect", updateBlackout);
+
+    var shortblackout = false;
+    var shortblackoutend = 0;
+    var updateShortBlackout = function(beatTime, duration) {
+      blackout = true;
+      shortblackout = true;
+      shortblackoutend = beatTime + duration;
+      renderNeeded = true;
+    };
+    Hues.addEventListener("shortblackouteffect", updateShortBlackout);
 
     var ctx = canvas.getContext("2d");
 
     var render = function(time) {
+      /* Check if the short blackout has ended */
+      if (shortblackout) {
+        if (time > shortblackoutend) {
+          shortblackout = false;
+          blackout = false;
+        }
+      }
+
       if (blackout) {
         ctx.save();
         ctx.fillStyle = "black";

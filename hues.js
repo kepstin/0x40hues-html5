@@ -155,7 +155,21 @@
        */
       songchange: [],
 
-      /* callback blackoutchange(blackoutActive, beatTime)
+      /* callback verticalblureffect(beatTime)
+       * Called on the start of a vertical blur effect.
+       *
+       * beatTime: The timestamp of the beat that the vertical blur occured on.
+       */
+      verticalblureffect: [],
+
+      /* callback horizontalblureffect(beatTime)
+       * Called on the start of a vertical blur effect.
+       *
+       * beatTime: The timestamp of the beat that the vertical blur occured on.
+       */
+      horizontalblureffect: [],
+
+      /* callback blackouteffect(blackoutActive, beatTime)
        * Indicates that the current (long) blackout state has changed.
        * This is called from beat analysis (in request animation frame context)
        * prior to the beat callback if the new effect causes a blackout to
@@ -165,7 +179,34 @@
        *   currently active.
        * beatTime: The timestamp of the beat that the blackout occured on.
        */
-      blackoutchange: [],
+      blackouteffect: [],
+
+      /* callback shortblackouteffect(beatTime, duration)
+       * Called on the start of the short blackout "|" beat effect, with the
+       * information required to time the short blackout correctly.
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback.
+       *
+       * beatTime: The timestamp of the beat that the short blackout occurred
+       *   on.
+       * duration: The length of the short blackout. (This is less than the
+       *   length of a beat.)
+       */
+      shortblackouteffect: [],
+
+      /* callback fadehueeffect(beatTime, duration, startHue, endHue)
+       * Called on the start of any of the hue fade effects, with the
+       * information needed to time the effect correctly.
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback.
+       *
+       * beatTime: The timestamp of the beat that the fade started on
+       * duration: The length of the fade. (This will be a multiple of the
+       *   beat duration, with a minimum length of one beat.)
+       * startHue: The hue at the start of the fade
+       * endHue: The hue at the end of the fade
+       */
+      fadehueeffect: [],
 
       /* callback beat(beatInfo)
        * Called when the beat has changed, after all of the callbacks to update
@@ -574,20 +615,20 @@
 
   /* The public object */
   var Hues = {
-    "setAutoMode": self.setAutoMode,
-    "getAutoMode": self.getAutoMode,
-    "getBeatString": self.getBeatString,
-    "addHues": addHues,
-    "addSongs": addSongs,
-    "playSong": playSong,
-    "prevSong": prevSong,
-    "nextSong": nextSong,
-    "addImages": addImages,
-    "changeImage": changeImage,
-    "randomImage": randomImage,
-    "getCurrentImage": getCurrentImage,
-    "addEventListener": addEventListener,
-    "removeEventListener": removeEventListener
+    setAutoMode: self.setAutoMode,
+    getAutoMode: self.getAutoMode,
+    getBeatString: self.getBeatString,
+    addHues: addHues,
+    addSongs: addSongs,
+    playSong: playSong,
+    prevSong: prevSong,
+    nextSong: nextSong,
+    addImages: addImages,
+    changeImage: changeImage,
+    randomImage: randomImage,
+    getCurrentImage: getCurrentImage,
+    addEventListener: addEventListener,
+    removeEventListener: removeEventListener
   };
 
 
@@ -1248,105 +1289,105 @@
       return;
     }
 
+    var beat = self.beat;
     var current = beatString[0];
     var rest = beatString.slice(1);
 
-    switch (current) {
-    case 'x':
-      /* Vertical blur (snare) 
-       * Changes color.
-       * Changes image on full auto. */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
-    case 'o':
-      /* Horizontal blur (bass)
-       * Changes color.
-       * Changes image on full auto. */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
-    case '-':
-      /* No blur
-       * Changes color.
-       * Changes image on full auto. */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
-    case '+':
-      /* Blackout
-       * Blackout lasts until next effect.
-       * Does not change color or image - but it *does* do a horizontal blur.
-       * Blackout fades in over the course of ~2 frames (+0.4 alpha per frame)
-       * This is about 40msec.
-       */
-      self.callEventListeners("blackoutchange", true);
-      break;
-    case '|':
-      /* Short blackout
-       * Sort of like the opposite of a regular blackout:
-       * It changes the color and image, but it does not do a blur.
-       * The same blackout fadein applies, which means the new image is
-       * visible for a frame or two at the start of the effect.
-       * The blackout lasts for 1/1.7 of a beat length; the image is visible
-       * for the remainder of the beat.
-       */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
-    case ':':
-      /* Color only */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      break;
-    case '*':
-      /* Image only */
-      self.callEventListeners("blackoutchange", false);
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
-    case 'X':
-      /* Vertical blur only
-       * Changes color.
-       * Unlike 'x', does *not* change image on full auto. */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      break;
-    case 'O':
-      /* Horizontal blur only
-       * Changes color.
-       * Unlike 'o', does *not* change image on full auto. */
-      self.callEventListeners("blackoutchange", false);
-      randomHue();
-      break;
-    case '~':
-      /* Fade color
-       * Color fade duration is until next effect. */
-      self.callEventListeners("blackoutchange", false);
-      break;
-    case '=':
-      /* Fade and change image
-       * Image change is immediate.
-       * Color fade duration is until next effect. */
-      self.callEventListeners("blackoutchange", false);
-      if (self["autoMode"] == 2) {
-        randomImage();
-      }
-      break;
+    /* . is the null character, no effect. */
+    if (current == ".") {
+      return;
     }
+
+    /* All non-null beat characters cancel blackout */
+    self.callEventListeners("blackouteffect", false);
+
+    /* Here's the current annotated list of beat effects:
+     *
+     * "x": Vertical blur (snare)
+     *   Changes color.
+     *   Changes image on full auto.
+     * "o": Horizontal blur (bass)
+     *   Changes color.
+     *   Changes image on full auto.
+     * "-": No blur
+     *   Changes color.
+     *   Changes image on full auto.
+     * "+": Blackout
+     *   Blackout lasts until the next non-null effect.
+     *   Does not change color or image, but it does do a horizontal blur.
+     *   Blackout fades in over the course of ~2 frames in the flash
+     *   (+0.4 alpha per frame), this works out to be about 40ms at 60fps.
+     *   There's no fade-out, the blackout ends instantly.
+     * "|": Short blackout
+     *   A blackout that only covers part of a single beat.
+     *   It changes the color and image, but it does not do any blur.
+     *   It has the same fade-in and lack of fade-out as standard blackout.
+     *   Note that due to the fade-in, the new image and color are visible for
+     *   a couple of frames at the start of the effect.
+     *   The length of the blackout is 1/1.7 of the beat length.
+     * ":": Color only
+     * "*": Image only
+     * "X": Vertical blur only
+     * "O": Horizontal blur only
+     * "~": Fade color
+     *   Color change only.
+     *   Instead of being immediate, the color is faded from the previous
+     *   to new color.
+     *   The duration of the fade is until the start of the next non-null
+     *   effect.
+     * "=": Fade and change image
+     *   Same as "~", but in addition the image is changed (at the start of the
+     *   effect).
+     */
+
+    /* Effects that cause vertical blur */
+    if (current == "x" || current == "X") {
+      self.callEventListeners("verticalblureffect", beat.time);
+    }
+
+    /* Effects that cause horizontal blur */
+    if (current == "o" || current == "O" || current == "+") {
+      self.callEventListeners("horizontalblureffect", beat.time);
+    }
+
+    /* Effects that cause color change */
+    if (current == "x" || current == "o" ||
+        current == "-" || current == "|" || current == ":") {
+      randomHue();
+    }
+
+    /* Effects that cause image change on full auto */
+    if (self.autoMode == 2 && (
+          current == "x" || current == "o" ||
+          current == "-" || current == "|" || current == "*" ||
+          current == "=")) {
+      randomImage();
+    }
+
+    /* Standard blackout */
+    if (current == "+") {
+      self.callEventListeners("blackouteffect", true);
+    }
+
+    /* Short blackout */
+    if (current == "|") {
+      self.callEventListeners("shortblackouteffect", beat.time,
+          self.beatDuration / 1.7);
+    }
+
+    /* Fade color */
+    if (current == "~" || current == "=") {
+      var prevHue = self.hue;
+      // TODO: This currently calls the huechange callback
+      randomHue();
+      /* Find the next non-null beat */
+      var i = 0;
+      for (i = 0; i < rest.length && rest[i] == "."; i++);
+      var duration = (i + 1) * self.beatDuration;
+      self.callEventListeners("fadehueeffect", beat.time, duration,
+          prevHue, self.hue);
+    }
+
   };
 
   var beatAnalyze = function() {
