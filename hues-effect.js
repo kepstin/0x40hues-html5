@@ -29,6 +29,7 @@ window.HuesEffect = (function() {
     "uniform sampler2D u_image;\n" +
     "uniform vec3 u_hue;\n" +
     "vec4 blur(sampler2D image, vec2 imagePosition) {\n" +
+    "  vec4 finalColor;\n" +
     "  // The only texture wrap mode supported for NPOT textures is clamp\n" +
     "  // but we want transparent outside the image area instead.\n" +
     "  if (imagePosition.x < 0.0 || imagePosition.y < 0.0 ||\n" +
@@ -36,20 +37,49 @@ window.HuesEffect = (function() {
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  if (u_blurX > 0.0 || u_blurY > 0.0) {\n" +
-    "    float totalWeight = 1.0;\n" +
-    "    vec4 finalColor = texture2D(image, imagePosition);\n" +
-    "    for (int i = 1; i <= u_blurSamples; i++) {\n" +
-    "      float weight = 1.0 - abs(float(i) / float(u_blurSamples));\n" +
-    "      float offset = float(i) / float(u_blurSamples);\n" +
-    "      vec2 displacement = vec2(offset * u_blurX, offset * u_blurY);\n" +
-    "      vec4 sample;\n" +
-    "      sample = texture2D(image, imagePosition + displacement);\n" +
+    "    vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.9375 * u_blurX, -0.9375 * u_blurY)) * 0.0625;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.8750 * u_blurX, -0.8750 * u_blurY)) * 0.1250;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.8125 * u_blurX, -0.8125 * u_blurY)) * 0.1875;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.7500 * u_blurX, -0.7500 * u_blurY)) * 0.2500;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.6875 * u_blurX, -0.6875 * u_blurY)) * 0.3125;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.6250 * u_blurX, -0.6250 * u_blurY)) * 0.3750;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.5625 * u_blurX, -0.5625 * u_blurY)) * 0.4375;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.5000 * u_blurX, -0.5000 * u_blurY)) * 0.5000;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.4375 * u_blurX, -0.4375 * u_blurY)) * 0.5625;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.3750 * u_blurX, -0.3750 * u_blurY)) * 0.6250;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.3125 * u_blurX, -0.3125 * u_blurY)) * 0.6875;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.2500 * u_blurX, -0.2500 * u_blurY)) * 0.7500;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.1875 * u_blurX, -0.1875 * u_blurY)) * 0.8125;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.1250 * u_blurX, -0.1250 * u_blurY)) * 0.8750;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2(-0.0625 * u_blurX, -0.0625 * u_blurY)) * 0.9375;\n" +
+    "    finalColor += texture2D(image, imagePosition);\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.0625 * u_blurX,  0.0625 * u_blurY)) * 0.9375;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.1250 * u_blurX,  0.1250 * u_blurY)) * 0.8750;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.1875 * u_blurX,  0.1875 * u_blurY)) * 0.8125;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.2500 * u_blurX,  0.2500 * u_blurY)) * 0.7500;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.3125 * u_blurX,  0.3125 * u_blurY)) * 0.6875;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.3750 * u_blurX,  0.3750 * u_blurY)) * 0.6250;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.4375 * u_blurX,  0.4375 * u_blurY)) * 0.5625;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.5000 * u_blurX,  0.5000 * u_blurY)) * 0.5000;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.5625 * u_blurX,  0.5625 * u_blurY)) * 0.4375;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.6250 * u_blurX,  0.6250 * u_blurY)) * 0.3750;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.6875 * u_blurX,  0.6875 * u_blurY)) * 0.3125;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.7500 * u_blurX,  0.7500 * u_blurY)) * 0.2500;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.8125 * u_blurX,  0.8125 * u_blurY)) * 0.1875;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.8750 * u_blurX,  0.8750 * u_blurY)) * 0.1250;\n" +
+    "    finalColor += texture2D(image, imagePosition + vec2( 0.9375 * u_blurX,  0.9375 * u_blurY)) * 0.0625;\n" +
+    "    return finalColor / 16.0;\n" +
+    /*
+    "    for (int i = -16; i <= 16; i++) {\n" +
+    "      float weight = 1.0 - abs(float(i) / 16.0);\n" +
+    "      float offset = float(i) / 16.0;\n" +
+    "      vec2 samplePosition = imagePosition + vec2(offset * u_blurX, offset * u_blurY);\n" +
+    "      vec4 sample = texture2D(image, samplePosition);\n" +
     "      finalColor += sample * weight;\n" +
-    "      sample = texture2D(image, imagePosition - displacement);\n" +
-    "      finalColor += sample * weight;\n" +
-    "      totalWeight += weight + weight;\n" +
+    "      totalWeight += weight;\n" +
     "    }\n" +
-    "    return finalColor / totalWeight;\n" +
+    */
     "  } else {\n" +
     "    return texture2D(image, imagePosition);\n" +
     "  }\n" +
@@ -611,6 +641,14 @@ window.HuesEffect = (function() {
         if (!gl.getProgramParameter(shader, gl.LINK_STATUS)) {
           console.log("Shader link failure:");
           console.log(gl.getProgramInfoLog(shader));
+          /* Try pulling out additional ANGLE logs if available */
+          var angleDebug = gl.getExtension("WEBGL_debug_shaders");
+          if (angleDebug) {
+            console.log("Vertex Translated source:");
+            console.log(angleDebug.getTranslatedShaderSource(vertexShader));
+            console.log("Fragment Translated source:");
+            console.log(angleDebug.getTranslatedShaderSource(fragmentShader));
+          }
           return reject("Could not link shader program");
         }
         self.shader = shader;
