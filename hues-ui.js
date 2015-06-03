@@ -253,16 +253,23 @@
      * on the window. */
 
     window.addEventListener("keypress", function(e) {
-      switch (e.keyCode) {
-      case 70:
-      case 102:
+      /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
+       * Because lol javascript */
+      var key = e.key;
+      if (!key) {
+        switch (e.keyCode) {
+        case 102:
+          key = 'f'
+          break;
+        }
+      }
+      if (key == 'f') {
         console.log("F - Toggle AutoMode");
         if (Hues.getAutoMode() == "normal") {
           Hues.setAutoMode("full auto");
         } else {
           Hues.setAutoMode("normal");
         }
-        break;
       }
     });
     /* Arrow keys don't have "press" events */
