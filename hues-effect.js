@@ -280,7 +280,7 @@ window.HuesEffect = (function() {
         self.imageAnimated = false;
       }
 
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
 
       self.img = img;
 
