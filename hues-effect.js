@@ -5,85 +5,213 @@ window.HuesEffect = (function() {
 
   /* The vertex shader simply passes through the vertex and image sampler
    * positions. Coordinate space is precalculated in Javascript. */
-  var vertexShaderSource =
+  var vertexShaderSource_v1 =
     "attribute vec2 a_position;\n" +
     "attribute vec2 a_imagePosition;\n" +
     "varying vec2 v_imagePosition;\n" +
+    "uniform vec2 u_blur;\n" +
     "void main() {\n" +
     "  gl_Position = vec4(a_position, 0, 1);\n" +
     "  // Flip the image vertically...\n" +
     "  v_imagePosition = vec2(a_imagePosition.x, 1.0 - a_imagePosition.y);\n" +
     "}\n";
+  var vertexShaderSource_v9 =
+    "attribute vec2 a_position;\n" +
+    "attribute vec2 a_imagePosition;\n" +
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[8];\n" +
+    "uniform vec2 u_blur;\n" +
+    "void main() {\n" +
+    "  gl_Position = vec4(a_position, 0, 1);\n" +
+    "  // Flip the image vertically...\n" +
+    "  v_imagePosition = vec2(a_imagePosition.x, 1.0 - a_imagePosition.y);\n" +
+    "  // Sample positions for blur\n" +
+    "  v_blurPosition[0] = v_imagePosition + u_blur * -1.00;\n" +
+    "  v_blurPosition[1] = v_imagePosition + u_blur * -0.75;\n" +
+    "  v_blurPosition[2] = v_imagePosition + u_blur * -0.50;\n" +
+    "  v_blurPosition[3] = v_imagePosition + u_blur * -0.25;\n" +
+    "  v_blurPosition[4] = v_imagePosition + u_blur *  0.25;\n" +
+    "  v_blurPosition[5] = v_imagePosition + u_blur *  0.50;\n" +
+    "  v_blurPosition[6] = v_imagePosition + u_blur *  0.75;\n" +
+    "  v_blurPosition[7] = v_imagePosition + u_blur *  1.00;\n" +
+    "}\n";
+  var vertexShaderSource_v15 =
+    "attribute vec2 a_position;\n" +
+    "attribute vec2 a_imagePosition;\n" +
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[14];\n" +
+    "uniform vec2 u_blur;\n" +
+    "void main() {\n" +
+    "  gl_Position = vec4(a_position, 0, 1);\n" +
+    "  // Flip the image vertically...\n" +
+    "  v_imagePosition = vec2(a_imagePosition.x, 1.0 - a_imagePosition.y);\n" +
+    "  // Sample positions for blur\n" +
+    "  v_blurPosition[ 0] = v_imagePosition + u_blur * -1.0000;\n" +
+    "  v_blurPosition[ 1] = v_imagePosition + u_blur * -0.8571;\n" +
+    "  v_blurPosition[ 2] = v_imagePosition + u_blur * -0.7143;\n" +
+    "  v_blurPosition[ 3] = v_imagePosition + u_blur * -0.5714;\n" +
+    "  v_blurPosition[ 4] = v_imagePosition + u_blur * -0.4289;\n" +
+    "  v_blurPosition[ 5] = v_imagePosition + u_blur * -0.2857;\n" +
+    "  v_blurPosition[ 6] = v_imagePosition + u_blur * -0.1429;\n" +
+    "  v_blurPosition[ 7] = v_imagePosition + u_blur *  0.1429;\n" +
+    "  v_blurPosition[ 8] = v_imagePosition + u_blur *  0.2857;\n" +
+    "  v_blurPosition[ 9] = v_imagePosition + u_blur *  0.4289;\n" +
+    "  v_blurPosition[10] = v_imagePosition + u_blur *  0.5714;\n" +
+    "  v_blurPosition[11] = v_imagePosition + u_blur *  0.7143;\n" +
+    "  v_blurPosition[12] = v_imagePosition + u_blur *  0.8571;\n" +
+    "  v_blurPosition[13] = v_imagePosition + u_blur *  1.0000;\n" +
+    "}\n";
+  var vertexShaderSource_v27 =
+    "attribute vec2 a_position;\n" +
+    "attribute vec2 a_imagePosition;\n" +
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[26];\n" +
+    "uniform vec2 u_blur;\n" +
+    "void main() {\n" +
+    "  gl_Position = vec4(a_position, 0, 1);\n" +
+    "  // Flip the image vertically...\n" +
+    "  v_imagePosition = vec2(a_imagePosition.x, 1.0 - a_imagePosition.y);\n" +
+    "  // Sample positions for blur\n" +
+    "  v_blurPosition[ 0] = v_imagePosition + u_blur * -1.000000;\n" +
+    "  v_blurPosition[ 1] = v_imagePosition + u_blur * -0.923077;\n" +
+    "  v_blurPosition[ 2] = v_imagePosition + u_blur * -0.846154;\n" +
+    "  v_blurPosition[ 3] = v_imagePosition + u_blur * -0.769231;\n" +
+    "  v_blurPosition[ 4] = v_imagePosition + u_blur * -0.692308;\n" +
+    "  v_blurPosition[ 5] = v_imagePosition + u_blur * -0.615385;\n" +
+    "  v_blurPosition[ 6] = v_imagePosition + u_blur * -0.538462;\n" +
+    "  v_blurPosition[ 7] = v_imagePosition + u_blur * -0.461538;\n" +
+    "  v_blurPosition[ 8] = v_imagePosition + u_blur * -0.384615;\n" +
+    "  v_blurPosition[ 9] = v_imagePosition + u_blur * -0.307692;\n" +
+    "  v_blurPosition[10] = v_imagePosition + u_blur * -0.230769;\n" +
+    "  v_blurPosition[11] = v_imagePosition + u_blur * -0.153846;\n" +
+    "  v_blurPosition[12] = v_imagePosition + u_blur * -0.076923;\n" +
+    "  v_blurPosition[13] = v_imagePosition + u_blur *  0.076923;\n" +
+    "  v_blurPosition[14] = v_imagePosition + u_blur *  0.153846;\n" +
+    "  v_blurPosition[15] = v_imagePosition + u_blur *  0.230769;\n" +
+    "  v_blurPosition[16] = v_imagePosition + u_blur *  0.307692;\n" +
+    "  v_blurPosition[17] = v_imagePosition + u_blur *  0.384615;\n" +
+    "  v_blurPosition[18] = v_imagePosition + u_blur *  0.461538;\n" +
+    "  v_blurPosition[19] = v_imagePosition + u_blur *  0.538462;\n" +
+    "  v_blurPosition[20] = v_imagePosition + u_blur *  0.615385;\n" +
+    "  v_blurPosition[21] = v_imagePosition + u_blur *  0.692308;\n" +
+    "  v_blurPosition[22] = v_imagePosition + u_blur *  0.769231;\n" +
+    "  v_blurPosition[23] = v_imagePosition + u_blur *  0.846154;\n" +
+    "  v_blurPosition[24] = v_imagePosition + u_blur *  0.923077;\n" +
+    "  v_blurPosition[25] = v_imagePosition + u_blur * -1.000000;\n" +
+    "}\n";
 
   /* The fragment shader handles doing the blurring, blend mode, blackout.
    * Note that the fragment shader uses premultiplied alpha throughout. The
    * UNPACK_PREMULTIPLY_ALPHA_WEBGL pixelStore parameter should be set. */
-  var fragmentShaderSource =
+  var fragmentShaderSource_header =
     "precision mediump float;\n" +
-    "varying vec2 v_imagePosition;\n" +
-    "const int u_blurSamples = 0x16;\n" +
-    "uniform float u_blurX;\n" +
-    "uniform float u_blurY;\n" +
+    "uniform vec2 u_blur;\n" +
     "uniform int u_blendMode;\n" +
     "uniform float u_blackout;\n" +
     "uniform sampler2D u_image;\n" +
-    "uniform vec3 u_hue;\n" +
-    "vec4 blur(sampler2D image, vec2 imagePosition) {\n" +
-    "  vec4 finalColor;\n" +
-    "  // The only texture wrap mode supported for NPOT textures is clamp\n" +
-    "  // but we want transparent outside the image area instead.\n" +
-    "  if (imagePosition.x < 0.0 || imagePosition.y < 0.0 ||\n" +
-    "      imagePosition.x > 1.0 || imagePosition.x > 1.0) {\n" +
+    "uniform vec3 u_hue;\n";
+  var fragmentShaderSource_blur_v1 =
+    "varying vec2 v_imagePosition;\n" +
+    "vec4 blur() {\n" +
+    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
-    "  if (u_blurX > 0.0 || u_blurY > 0.0) {\n" +
-    "    vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.9375 * u_blurX, -0.9375 * u_blurY)) * 0.0625;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.8750 * u_blurX, -0.8750 * u_blurY)) * 0.1250;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.8125 * u_blurX, -0.8125 * u_blurY)) * 0.1875;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.7500 * u_blurX, -0.7500 * u_blurY)) * 0.2500;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.6875 * u_blurX, -0.6875 * u_blurY)) * 0.3125;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.6250 * u_blurX, -0.6250 * u_blurY)) * 0.3750;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.5625 * u_blurX, -0.5625 * u_blurY)) * 0.4375;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.5000 * u_blurX, -0.5000 * u_blurY)) * 0.5000;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.4375 * u_blurX, -0.4375 * u_blurY)) * 0.5625;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.3750 * u_blurX, -0.3750 * u_blurY)) * 0.6250;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.3125 * u_blurX, -0.3125 * u_blurY)) * 0.6875;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.2500 * u_blurX, -0.2500 * u_blurY)) * 0.7500;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.1875 * u_blurX, -0.1875 * u_blurY)) * 0.8125;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.1250 * u_blurX, -0.1250 * u_blurY)) * 0.8750;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2(-0.0625 * u_blurX, -0.0625 * u_blurY)) * 0.9375;\n" +
-    "    finalColor += texture2D(image, imagePosition);\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.0625 * u_blurX,  0.0625 * u_blurY)) * 0.9375;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.1250 * u_blurX,  0.1250 * u_blurY)) * 0.8750;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.1875 * u_blurX,  0.1875 * u_blurY)) * 0.8125;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.2500 * u_blurX,  0.2500 * u_blurY)) * 0.7500;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.3125 * u_blurX,  0.3125 * u_blurY)) * 0.6875;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.3750 * u_blurX,  0.3750 * u_blurY)) * 0.6250;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.4375 * u_blurX,  0.4375 * u_blurY)) * 0.5625;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.5000 * u_blurX,  0.5000 * u_blurY)) * 0.5000;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.5625 * u_blurX,  0.5625 * u_blurY)) * 0.4375;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.6250 * u_blurX,  0.6250 * u_blurY)) * 0.3750;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.6875 * u_blurX,  0.6875 * u_blurY)) * 0.3125;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.7500 * u_blurX,  0.7500 * u_blurY)) * 0.2500;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.8125 * u_blurX,  0.8125 * u_blurY)) * 0.1875;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.8750 * u_blurX,  0.8750 * u_blurY)) * 0.1250;\n" +
-    "    finalColor += texture2D(image, imagePosition + vec2( 0.9375 * u_blurX,  0.9375 * u_blurY)) * 0.0625;\n" +
-    "    return finalColor / 16.0;\n" +
-    /*
-    "    for (int i = -16; i <= 16; i++) {\n" +
-    "      float weight = 1.0 - abs(float(i) / 16.0);\n" +
-    "      float offset = float(i) / 16.0;\n" +
-    "      vec2 samplePosition = imagePosition + vec2(offset * u_blurX, offset * u_blurY);\n" +
-    "      vec4 sample = texture2D(image, samplePosition);\n" +
-    "      finalColor += sample * weight;\n" +
-    "      totalWeight += weight;\n" +
-    "    }\n" +
-    */
-    "  } else {\n" +
-    "    return texture2D(image, imagePosition);\n" +
+    "  // Blur? What blur?\n" +
+    "  return texture2D(image, v_imagePosition);\n" +
+    "}\n";
+  var fragmentShaderSource_blur_v9 =
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[14];\n" +
+    "vec4 blur() {\n" +
+    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "    return vec4(0.0);\n" +
     "  }\n" +
-    "}\n" +
+    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
+    "    // One dimensional discrete Gaussian kernel, 9 samples\n" +
+    "    // sigma=1.5 samples, normalized\n" +
+    "    color += texture2D(image, v_blurPosition[0]) * 0.008488;\n" +
+    "    color += texture2D(image, v_blurPosition[7]) * 0.008488;\n" +
+    "    color += texture2D(image, v_blurPosition[1]) * 0.038078;\n" +
+    "    color += texture2D(image, v_blurPosition[6]) * 0.038078;\n" +
+    "    color += texture2D(image, v_blurPosition[2]) * 0.111165;\n" +
+    "    color += texture2D(image, v_blurPosition[5]) * 0.111165;\n" +
+    "    color += texture2D(image, v_blurPosition[3]) * 0.211357;\n" +
+    "    color += texture2D(image, v_blurPosition[4]) * 0.211357;\n" +
+    "    color += texture2D(image, v_imagePosition  ) * 0.261824;\n" +
+    "  } else {\n" +
+    "    return texture2D(image, v_imagePosition);\n" +
+    "  }\n" +
+    "}\n";
+  var fragmentShaderSource_blur_v15 =
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[14];\n" +
+    "vec4 blur() {\n" +
+    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "    return vec4(0.0);\n" +
+    "  }\n" +
+    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
+    "    // One dimensional discrete Gaussian kernel, 15 samples\n" +
+    "    // sigma=2.5 samples, normalized\n" +
+    "    color += texture2D(image, v_blurPosition[ 0]) * 0.003320;\n" +
+    "    color += texture2D(image, v_blurPosition[13]) * 0.003320;\n" +
+    "    color += texture2D(image, v_blurPosition[ 1]) * 0.009267;\n" +
+    "    color += texture2D(image, v_blurPosition[12]) * 0.009267;\n" +
+    "    color += texture2D(image, v_blurPosition[ 2]) * 0.022087;\n" +
+    "    color += texture2D(image, v_blurPosition[11]) * 0.022087;\n" +
+    "    color += texture2D(image, v_blurPosition[ 3]) * 0.044948;\n" +
+    "    color += texture2D(image, v_blurPosition[10]) * 0.044948;\n" +
+    "    color += texture2D(image, v_blurPosition[ 4]) * 0.078109;\n" +
+    "    color += texture2D(image, v_blurPosition[ 9]) * 0.078109;\n" +
+    "    color += texture2D(image, v_blurPosition[ 5]) * 0.115911;\n" +
+    "    color += texture2D(image, v_blurPosition[ 8]) * 0.115911;\n" +
+    "    color += texture2D(image, v_blurPosition[ 6]) * 0.146884;\n" +
+    "    color += texture2D(image, v_blurPosition[ 7]) * 0.146884;\n" +
+    "    color += texture2D(image, v_imagePosition   ) * 0.158949;\n" +
+    "  } else {\n" +
+    "    return texture2D(image, v_imagePosition);\n" +
+    "  }\n" +
+    "}\n";
+  var fragmentShaderSource_blur_v27 =
+    "varying vec2 v_imagePosition;\n" +
+    "varying vec2 v_blurPosition[26];\n" +
+    "vec4 blur(sampler2D image, vec2 pos) {\n" +
+    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "    return vec4(0.0);\n" +
+    "  }\n" +
+    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
+    "    // One dimensional discrete Gaussian kernel, 27 samples\n" +
+    "    // sigma=4.5 samples, normalized\n" +
+    //0.00139	0.002571	0.004527	0.007587	0.012105	0.018387	0.026588	0.036604	0.047973	0.059856	0.071099	0.080401	0.086556	0.088711
+    "    color += texture2D(image, v_blurPosition[ 0]) * 0.001390;\n" +
+    "    color += texture2D(image, v_blurPosition[25]) * 0.001390;\n" +
+    "    color += texture2D(image, v_blurPosition[ 1]) * 0.002571;\n" +
+    "    color += texture2D(image, v_blurPosition[24]) * 0.002571;\n" +
+    "    color += texture2D(image, v_blurPosition[ 2]) * 0.004527;\n" +
+    "    color += texture2D(image, v_blurPosition[23]) * 0.004527;\n" +
+    "    color += texture2D(image, v_blurPosition[ 3]) * 0.007587;\n" +
+    "    color += texture2D(image, v_blurPosition[22]) * 0.007587;\n" +
+    "    color += texture2D(image, v_blurPosition[ 4]) * 0.012105;\n" +
+    "    color += texture2D(image, v_blurPosition[21]) * 0.012105;\n" +
+    "    color += texture2D(image, v_blurPosition[ 5]) * 0.018387;\n" +
+    "    color += texture2D(image, v_blurPosition[20]) * 0.018387;\n" +
+    "    color += texture2D(image, v_blurPosition[ 6]) * 0.026588;\n" +
+    "    color += texture2D(image, v_blurPosition[19]) * 0.026588;\n" +
+    "    color += texture2D(image, v_blurPosition[ 7]) * 0.036604;\n" +
+    "    color += texture2D(image, v_blurPosition[18]) * 0.036604;\n" +
+    "    color += texture2D(image, v_blurPosition[ 8]) * 0.047973;\n" +
+    "    color += texture2D(image, v_blurPosition[17]) * 0.047973;\n" +
+    "    color += texture2D(image, v_blurPosition[ 9]) * 0.059856;\n" +
+    "    color += texture2D(image, v_blurPosition[16]) * 0.059856;\n" +
+    "    color += texture2D(image, v_imagePosition   ) * 0.086556;\n" +
+    "    return color;\n" +
+    "  } else {\n" +
+    "    return texture2D(image, pos);\n" +
+    "  }\n" +
+    "}\n";
+  var fragmentShaderSource_footer =
     "vec4 blendPlain(vec4 sample, vec3 hue) {\n" +
     "  return vec4(sample.rgb + hue * (1.0 - sample.a), 1.0);\n" +
     "}\n" +
@@ -561,13 +689,9 @@ window.HuesEffect = (function() {
 
       /* Fragment shader */
 
-      /* Horizontal blur */
-      var uBlurX = gl.getUniformLocation(shader, "u_blurX");
-      gl.uniform1f(uBlurX, self.blurX);
-
-      /* Vertical blur */
-      var uBlurY = gl.getUniformLocation(shader, "u_blurY");
-      gl.uniform1f(uBlurY, self.blurY);
+      /* Horizontal/Vertical blur */
+      var uBlurX = gl.getUniformLocation(shader, "u_blur");
+      gl.uniform2f(uBlurX, self.blurX, self.blurY);
 
       /* Blend mode */
       var uBlendModeLoc = gl.getUniformLocation(shader, "u_blendMode");
@@ -618,6 +742,29 @@ window.HuesEffect = (function() {
       }
       return new Promise(function(resolve, reject) {
         var gl = self.gl;
+	var vertexShaderSource;
+	var fragmentShaderSource;
+        /* Select the blur fragment shader to use based on the number
+         * of varying vectors available. More vectors gives better-looking
+         * blur results */
+	var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
+	if (varyings >= 27) {
+          vertexShaderSource = vertexShaderSource_v27;
+          fragmentShaderSource = fragmentShaderSource_header +
+              fragmentShaderSource_blur_v27 + fragmentShaderSource_footer;
+	} else if (varyings >= 15) {
+          vertexShaderSource = vertexShaderSource_v15;
+          fragmentShaderSource = fragmentShaderSource_header +
+              fragmentShaderSource_blur_v15 + fragmentShaderSource_footer;
+        } else if (varyings >= 9) {
+          vertexShaderSource = vertexShaderSource_v9;
+          fragmentShaderSource = fragmentShaderSource_header +
+              fragmentShaderSource_blur_v9 + fragmentShaderSource_footer;
+        } else {
+          vertexShaderSource = vertexShaderSource_v1;
+          fragmentShaderSource = fragmentShaderSource_header +
+              fragmentShaderSource_blur_v1 + fragmentShaderSource_footer;
+        }
         var vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexShaderSource);
         gl.compileShader(vertexShader);
