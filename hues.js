@@ -1097,6 +1097,9 @@
       if (uri.slice(-1) == "/") {
         uri = uri.slice(0, -1);
       }
+      if (uri.indexOf(":") < 0) {
+        uri = "respacks/" + uri;
+      }
       var respack = {
         "uri": uri
       };
@@ -1159,12 +1162,9 @@
   // TODO: The is basically the main setup function?
   var loadDefaultRespack = function() {
     self.callEventListeners("progressstart");
-    var builtin = loadRespack("respacks/builtin");
+    var builtin = loadRespack("builtin");
 
     var respackURI = self["defaults"]["respack"];
-    if (respackURI.indexOf(":") < 0) {
-      respackURI = "respacks/" + respackURI;
-    }
 
     var respack = loadRespack(respackURI);
 
