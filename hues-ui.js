@@ -18,9 +18,9 @@
       return Promise.reject(Error("Cannot find requested root element " +
             rootElement + " on page."));
     }
-    while (rootElement.firstChild) {
+    /*while (rootElement.firstChild) {
       rootElement.removeChild(rootElement.firstChild);
-    }
+    }*/
     return Promise.resolve(rootElement);
   }
 
