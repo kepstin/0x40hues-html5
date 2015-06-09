@@ -105,7 +105,7 @@ window.HuesEffect = (function() {
    * UNPACK_PREMULTIPLY_ALPHA_WEBGL pixelStore parameter should be set. */
   var fragmentShaderSource_header =
     "precision mediump float;\n" +
-    "uniform vec2 u_blur;\n" +
+    "uniform bool u_fragBlur;\n" +
     "uniform int u_blendMode;\n" +
     "uniform float u_blackout;\n" +
     "uniform sampler2D u_image;\n" +
@@ -126,7 +126,7 @@ window.HuesEffect = (function() {
     "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
-    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "  if (u_fragBlur) {\n" +
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 9 samples\n" +
     "    // sigma=1.5 samples, normalized\n" +
@@ -150,7 +150,7 @@ window.HuesEffect = (function() {
     "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
-    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "  if (u_fragBlur) {\n" +
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 15 samples\n" +
     "    // sigma=2.5 samples, normalized\n" +
@@ -180,11 +180,10 @@ window.HuesEffect = (function() {
     "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
-    "  if (u_blur.x > 0.0 || u_blur.y > 0.0) {\n" +
+    "  if (u_fragBlur) {\n" +
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 27 samples\n" +
     "    // sigma=4.5 samples, normalized\n" +
-    //0.00139	0.002571	0.004527	0.007587	0.012105	0.018387	0.026588	0.036604	0.047973	0.059856	0.071099	0.080401	0.086556	0.088711
     "    color += texture2D(image, v_blurPosition[ 0]) * 0.001390;\n" +
     "    color += texture2D(image, v_blurPosition[25]) * 0.001390;\n" +
     "    color += texture2D(image, v_blurPosition[ 1]) * 0.002571;\n" +
@@ -205,6 +204,12 @@ window.HuesEffect = (function() {
     "    color += texture2D(image, v_blurPosition[17]) * 0.047973;\n" +
     "    color += texture2D(image, v_blurPosition[ 9]) * 0.059856;\n" +
     "    color += texture2D(image, v_blurPosition[16]) * 0.059856;\n" +
+    "    color += texture2D(image, v_blurPosition[10]) * 0.071099;\n" +
+    "    color += texture2D(image, v_blurPosition[15]) * 0.071099;\n" +
+    "    color += texture2D(image, v_blurPosition[11]) * 0.080401;\n" +
+    "    color += texture2D(image, v_blurPosition[14]) * 0.080401;\n" +
+    "    color += texture2D(image, v_blurPosition[12]) * 0.086556;\n" +
+    "    color += texture2D(image, v_blurPosition[13]) * 0.086556;\n" +
     "    color += texture2D(image, v_imagePosition   ) * 0.086556;\n" +
     "    return color;\n" +
     "  } else {\n" +
@@ -304,7 +309,8 @@ window.HuesEffect = (function() {
      * 50 for faster!
      * Don't set this to 0; use blurAmount to disable blur.
      */
-    blurDecay: 0.060,
+    blurDecay: 0.100,
+    //blurDecay: 0.5,
 
     /* Internal state */
 
@@ -594,7 +600,7 @@ window.HuesEffect = (function() {
         return;
       }
 
-      var amount = 1.0 - (startTime - time) / duration;
+      var amount = 1.0 - (time - startTime) / duration;
       var radius = self.blurAmount;
       var direction = self.blurDirection;
       var img = self.img;
@@ -690,8 +696,11 @@ window.HuesEffect = (function() {
       /* Fragment shader */
 
       /* Horizontal/Vertical blur */
-      var uBlurX = gl.getUniformLocation(shader, "u_blur");
-      gl.uniform2f(uBlurX, self.blurX, self.blurY);
+      var uBlur = gl.getUniformLocation(shader, "u_blur");
+      gl.uniform2f(uBlur, self.blurX, self.blurY);
+
+      var uFragBlur = gl.getUniformLocation(shader, "u_fragBlur");
+      gl.uniform1i(uFragBlur, (self.blurX > 0 || self.blurY > 0) ? 1 : 0);
 
       /* Blend mode */
       var uBlendModeLoc = gl.getUniformLocation(shader, "u_blendMode");
