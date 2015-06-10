@@ -179,7 +179,7 @@ window.HuesEffect = (function() {
   var fragmentShaderSource_blur_v27 =
     "varying vec2 v_imagePosition;\n" +
     "varying vec2 v_blurPosition[26];\n" +
-    "vec4 blur(sampler2D image, vec2 pos) {\n" +
+    "vec4 blur() {\n" +
     "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
     "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
@@ -251,7 +251,7 @@ window.HuesEffect = (function() {
     "  return mix(sample, vec4(0.0, 0.0, 0.0, 1.0), alpha);\n" +
     "}\n" +
     "void main() {\n" +
-    "  vec4 blurSample = blur(u_image, v_imagePosition);\n" +
+    "  vec4 blurSample = blur();\n" +
     "  vec4 blendSample;\n" +
     "  if (u_blendMode == 2) {\n" +
     "    blendSample = blendHardLight(blurSample, u_hue);\n" +
