@@ -113,7 +113,8 @@ window.HuesEffect = (function() {
   var fragmentShaderSource_blur_v1 =
     "varying vec2 v_imagePosition;\n" +
     "vec4 blur() {\n" +
-    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
+    "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  // Blur? What blur?\n" +
@@ -123,7 +124,8 @@ window.HuesEffect = (function() {
     "varying vec2 v_imagePosition;\n" +
     "varying vec2 v_blurPosition[14];\n" +
     "vec4 blur() {\n" +
-    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
+    "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  if (u_fragBlur) {\n" +
@@ -147,7 +149,8 @@ window.HuesEffect = (function() {
     "varying vec2 v_imagePosition;\n" +
     "varying vec2 v_blurPosition[14];\n" +
     "vec4 blur() {\n" +
-    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
+    "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  if (u_fragBlur) {\n" +
@@ -177,7 +180,8 @@ window.HuesEffect = (function() {
     "varying vec2 v_imagePosition;\n" +
     "varying vec2 v_blurPosition[26];\n" +
     "vec4 blur(sampler2D image, vec2 pos) {\n" +
-    "  if (pos.x < 0.0 || pos.y < 0.0 || pos.x > 1.0 || pos.x > 1.0) {\n" +
+    "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
+    "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  if (u_fragBlur) {\n" +
@@ -564,8 +568,7 @@ window.HuesEffect = (function() {
       }
 
       var frames = self.imageFrames;
-      var frame = Math.floor((time - self.imageStartTime) /
-          self.imageFrameDuration) % frames.length;
+      var frame = Math.floor(time / self.imageFrameDuration) % frames.length;
 
       if (frame == self.imageFrame) {
         return;
@@ -573,7 +576,7 @@ window.HuesEffect = (function() {
 
       var img = frames[frame];
       var gl = self.gl;
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
 
       self.img = img;
       self.imageFrame = frame;
