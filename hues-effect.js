@@ -122,7 +122,7 @@ window.HuesEffect = (function() {
     "}\n";
   var fragmentShaderSource_blur_v9 =
     "varying vec2 v_imagePosition;\n" +
-    "varying vec2 v_blurPosition[14];\n" +
+    "varying vec2 v_blurPosition[8];\n" +
     "vec4 blur() {\n" +
     "  if (v_imagePosition.x < 0.0 || v_imagePosition.y < 0.0 ||\n" +
     "      v_imagePosition.x > 1.0 || v_imagePosition.x > 1.0) {\n" +
