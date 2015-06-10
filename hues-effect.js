@@ -118,7 +118,7 @@ window.HuesEffect = (function() {
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  // Blur? What blur?\n" +
-    "  return texture2D(image, v_imagePosition);\n" +
+    "  return texture2D(u_image, v_imagePosition);\n" +
     "}\n";
   var fragmentShaderSource_blur_v9 =
     "varying vec2 v_imagePosition;\n" +
@@ -132,17 +132,17 @@ window.HuesEffect = (function() {
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 9 samples\n" +
     "    // sigma=1.5 samples, normalized\n" +
-    "    color += texture2D(image, v_blurPosition[0]) * 0.008488;\n" +
-    "    color += texture2D(image, v_blurPosition[7]) * 0.008488;\n" +
-    "    color += texture2D(image, v_blurPosition[1]) * 0.038078;\n" +
-    "    color += texture2D(image, v_blurPosition[6]) * 0.038078;\n" +
-    "    color += texture2D(image, v_blurPosition[2]) * 0.111165;\n" +
-    "    color += texture2D(image, v_blurPosition[5]) * 0.111165;\n" +
-    "    color += texture2D(image, v_blurPosition[3]) * 0.211357;\n" +
-    "    color += texture2D(image, v_blurPosition[4]) * 0.211357;\n" +
-    "    color += texture2D(image, v_imagePosition  ) * 0.261824;\n" +
+    "    color += texture2D(u_image, v_blurPosition[0]) * 0.008488;\n" +
+    "    color += texture2D(u_image, v_blurPosition[7]) * 0.008488;\n" +
+    "    color += texture2D(u_image, v_blurPosition[1]) * 0.038078;\n" +
+    "    color += texture2D(u_image, v_blurPosition[6]) * 0.038078;\n" +
+    "    color += texture2D(u_image, v_blurPosition[2]) * 0.111165;\n" +
+    "    color += texture2D(u_image, v_blurPosition[5]) * 0.111165;\n" +
+    "    color += texture2D(u_image, v_blurPosition[3]) * 0.211357;\n" +
+    "    color += texture2D(u_image, v_blurPosition[4]) * 0.211357;\n" +
+    "    color += texture2D(u_image, v_imagePosition  ) * 0.261824;\n" +
     "  } else {\n" +
-    "    return texture2D(image, v_imagePosition);\n" +
+    "    return texture2D(u_image, v_imagePosition);\n" +
     "  }\n" +
     "}\n";
   var fragmentShaderSource_blur_v15 =
@@ -157,23 +157,23 @@ window.HuesEffect = (function() {
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 15 samples\n" +
     "    // sigma=2.5 samples, normalized\n" +
-    "    color += texture2D(image, v_blurPosition[ 0]) * 0.003320;\n" +
-    "    color += texture2D(image, v_blurPosition[13]) * 0.003320;\n" +
-    "    color += texture2D(image, v_blurPosition[ 1]) * 0.009267;\n" +
-    "    color += texture2D(image, v_blurPosition[12]) * 0.009267;\n" +
-    "    color += texture2D(image, v_blurPosition[ 2]) * 0.022087;\n" +
-    "    color += texture2D(image, v_blurPosition[11]) * 0.022087;\n" +
-    "    color += texture2D(image, v_blurPosition[ 3]) * 0.044948;\n" +
-    "    color += texture2D(image, v_blurPosition[10]) * 0.044948;\n" +
-    "    color += texture2D(image, v_blurPosition[ 4]) * 0.078109;\n" +
-    "    color += texture2D(image, v_blurPosition[ 9]) * 0.078109;\n" +
-    "    color += texture2D(image, v_blurPosition[ 5]) * 0.115911;\n" +
-    "    color += texture2D(image, v_blurPosition[ 8]) * 0.115911;\n" +
-    "    color += texture2D(image, v_blurPosition[ 6]) * 0.146884;\n" +
-    "    color += texture2D(image, v_blurPosition[ 7]) * 0.146884;\n" +
-    "    color += texture2D(image, v_imagePosition   ) * 0.158949;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 0]) * 0.003320;\n" +
+    "    color += texture2D(u_image, v_blurPosition[13]) * 0.003320;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 1]) * 0.009267;\n" +
+    "    color += texture2D(u_image, v_blurPosition[12]) * 0.009267;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 2]) * 0.022087;\n" +
+    "    color += texture2D(u_image, v_blurPosition[11]) * 0.022087;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 3]) * 0.044948;\n" +
+    "    color += texture2D(u_image, v_blurPosition[10]) * 0.044948;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 4]) * 0.078109;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 9]) * 0.078109;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 5]) * 0.115911;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 8]) * 0.115911;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 6]) * 0.146884;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 7]) * 0.146884;\n" +
+    "    color += texture2D(u_image, v_imagePosition   ) * 0.158949;\n" +
     "  } else {\n" +
-    "    return texture2D(image, v_imagePosition);\n" +
+    "    return texture2D(u_image, v_imagePosition);\n" +
     "  }\n" +
     "}\n";
   var fragmentShaderSource_blur_v27 =
@@ -188,36 +188,36 @@ window.HuesEffect = (function() {
     "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n" +
     "    // One dimensional discrete Gaussian kernel, 27 samples\n" +
     "    // sigma=4.5 samples, normalized\n" +
-    "    color += texture2D(image, v_blurPosition[ 0]) * 0.001390;\n" +
-    "    color += texture2D(image, v_blurPosition[25]) * 0.001390;\n" +
-    "    color += texture2D(image, v_blurPosition[ 1]) * 0.002571;\n" +
-    "    color += texture2D(image, v_blurPosition[24]) * 0.002571;\n" +
-    "    color += texture2D(image, v_blurPosition[ 2]) * 0.004527;\n" +
-    "    color += texture2D(image, v_blurPosition[23]) * 0.004527;\n" +
-    "    color += texture2D(image, v_blurPosition[ 3]) * 0.007587;\n" +
-    "    color += texture2D(image, v_blurPosition[22]) * 0.007587;\n" +
-    "    color += texture2D(image, v_blurPosition[ 4]) * 0.012105;\n" +
-    "    color += texture2D(image, v_blurPosition[21]) * 0.012105;\n" +
-    "    color += texture2D(image, v_blurPosition[ 5]) * 0.018387;\n" +
-    "    color += texture2D(image, v_blurPosition[20]) * 0.018387;\n" +
-    "    color += texture2D(image, v_blurPosition[ 6]) * 0.026588;\n" +
-    "    color += texture2D(image, v_blurPosition[19]) * 0.026588;\n" +
-    "    color += texture2D(image, v_blurPosition[ 7]) * 0.036604;\n" +
-    "    color += texture2D(image, v_blurPosition[18]) * 0.036604;\n" +
-    "    color += texture2D(image, v_blurPosition[ 8]) * 0.047973;\n" +
-    "    color += texture2D(image, v_blurPosition[17]) * 0.047973;\n" +
-    "    color += texture2D(image, v_blurPosition[ 9]) * 0.059856;\n" +
-    "    color += texture2D(image, v_blurPosition[16]) * 0.059856;\n" +
-    "    color += texture2D(image, v_blurPosition[10]) * 0.071099;\n" +
-    "    color += texture2D(image, v_blurPosition[15]) * 0.071099;\n" +
-    "    color += texture2D(image, v_blurPosition[11]) * 0.080401;\n" +
-    "    color += texture2D(image, v_blurPosition[14]) * 0.080401;\n" +
-    "    color += texture2D(image, v_blurPosition[12]) * 0.086556;\n" +
-    "    color += texture2D(image, v_blurPosition[13]) * 0.086556;\n" +
-    "    color += texture2D(image, v_imagePosition   ) * 0.086556;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 0]) * 0.001390;\n" +
+    "    color += texture2D(u_image, v_blurPosition[25]) * 0.001390;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 1]) * 0.002571;\n" +
+    "    color += texture2D(u_image, v_blurPosition[24]) * 0.002571;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 2]) * 0.004527;\n" +
+    "    color += texture2D(u_image, v_blurPosition[23]) * 0.004527;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 3]) * 0.007587;\n" +
+    "    color += texture2D(u_image, v_blurPosition[22]) * 0.007587;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 4]) * 0.012105;\n" +
+    "    color += texture2D(u_image, v_blurPosition[21]) * 0.012105;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 5]) * 0.018387;\n" +
+    "    color += texture2D(u_image, v_blurPosition[20]) * 0.018387;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 6]) * 0.026588;\n" +
+    "    color += texture2D(u_image, v_blurPosition[19]) * 0.026588;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 7]) * 0.036604;\n" +
+    "    color += texture2D(u_image, v_blurPosition[18]) * 0.036604;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 8]) * 0.047973;\n" +
+    "    color += texture2D(u_image, v_blurPosition[17]) * 0.047973;\n" +
+    "    color += texture2D(u_image, v_blurPosition[ 9]) * 0.059856;\n" +
+    "    color += texture2D(u_image, v_blurPosition[16]) * 0.059856;\n" +
+    "    color += texture2D(u_image, v_blurPosition[10]) * 0.071099;\n" +
+    "    color += texture2D(u_image, v_blurPosition[15]) * 0.071099;\n" +
+    "    color += texture2D(u_image, v_blurPosition[11]) * 0.080401;\n" +
+    "    color += texture2D(u_image, v_blurPosition[14]) * 0.080401;\n" +
+    "    color += texture2D(u_image, v_blurPosition[12]) * 0.086556;\n" +
+    "    color += texture2D(u_image, v_blurPosition[13]) * 0.086556;\n" +
+    "    color += texture2D(u_image, v_imagePosition   ) * 0.086556;\n" +
     "    return color;\n" +
     "  } else {\n" +
-    "    return texture2D(image, pos);\n" +
+    "    return texture2D(u_image, v_imagePosition);\n" +
     "  }\n" +
     "}\n";
   var fragmentShaderSource_footer =
