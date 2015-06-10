@@ -762,7 +762,6 @@ window.HuesEffect = (function() {
          * of varying vectors available. More vectors gives better-looking
          * blur results */
 	var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
-	varyings = 9;
 	console.log("Compiling shader for MAX_VARYING_VECTORS=" + varyings);
 	if (varyings >= 27) {
           vertexShaderSource = vertexShaderSource_v27;
