@@ -141,6 +141,7 @@ window.HuesEffect = (function() {
     "    color += texture2D(u_image, v_blurPosition[3]) * 0.211357;\n" +
     "    color += texture2D(u_image, v_blurPosition[4]) * 0.211357;\n" +
     "    color += texture2D(u_image, v_imagePosition  ) * 0.261824;\n" +
+    "    return color;\n" +
     "  } else {\n" +
     "    return texture2D(u_image, v_imagePosition);\n" +
     "  }\n" +
@@ -172,6 +173,7 @@ window.HuesEffect = (function() {
     "    color += texture2D(u_image, v_blurPosition[ 6]) * 0.146884;\n" +
     "    color += texture2D(u_image, v_blurPosition[ 7]) * 0.146884;\n" +
     "    color += texture2D(u_image, v_imagePosition   ) * 0.158949;\n" +
+    "    return color;\n" +
     "  } else {\n" +
     "    return texture2D(u_image, v_imagePosition);\n" +
     "  }\n" +
@@ -760,6 +762,8 @@ window.HuesEffect = (function() {
          * of varying vectors available. More vectors gives better-looking
          * blur results */
 	var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
+	varyings = 9;
+	console.log("Compiling shader for MAX_VARYING_VECTORS=" + varyings);
 	if (varyings >= 27) {
           vertexShaderSource = vertexShaderSource_v27;
           fragmentShaderSource = fragmentShaderSource_header +
