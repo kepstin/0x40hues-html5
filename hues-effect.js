@@ -329,6 +329,10 @@ window.HuesEffect = (function() {
     /* The compiled shader program */
     shader: null,
 
+    /* Vertex buffers */
+    positionBuf: null,
+    imagePositionBuf: null,
+
     /* Effect state */
 
     /* Whether an effect has changed such that a re-render is required */
@@ -345,10 +349,9 @@ window.HuesEffect = (function() {
     hueFadeEndHue: null,
 
     /* The current image */
-    img: null,
+    image: null,
     imageAnimated: false,
     imageFrame: 0,
-    imageFrames: [],
     imageStartTime: 0,
     imageFrameDuration: 0,
     imageTexture: null,
@@ -377,6 +380,55 @@ window.HuesEffect = (function() {
     blackoutStartTime: 0,
     blackout: 0.0,
 
+    /* Loading callbacks */
+
+    imageLoadCallback: function(image, blob) {
+      var img = document.createElement("img");
+      img.addEventListener("load", function() {
+        var gl = self.gl;
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // TODO: allow switching between nearest and linear scaling?
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+
+        image.texture = texture;
+        image.width = img.naturalWidth;
+        image.height = img.naturalHeight;
+      });
+      img.src = URL.createObjectURL(blob);
+    },
+
+    imageFrameLoadCallback: function(image, frame, blob) {
+      console.log("got an animation frame!");
+      if (typeof(image.textures) === "undefined") {
+        image.textures = [];
+      }
+
+      var img = document.createElement("img");
+      img.addEventListener("load", function() {
+        var gl = self.gl;
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // TODO: allow switching between nearest and linear scaling?
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+
+        console.log("adding texture for frame " + frame);
+
+        image.textures[frame - 1] = texture;
+        image.width = img.naturalWidth;
+        image.height = img.naturalHeight;
+      });
+      img.src = URL.createObjectURL(blob);
+    },
+
     /* Effect callbacks */
 
     hueChangeCallback: function(newHue, startTime, duration) {
@@ -395,9 +447,8 @@ window.HuesEffect = (function() {
     },
 
     imageChangeCallback: function(imageInfo, startTime) {
-      var gl = self.gl;
-      var texture = self.texture;
       var img = imageInfo.img;
+      var texture = imageInfo.texture;
 
       switch (imageInfo.align) {
       case "left": self.imageAlign = 1; break;
@@ -405,24 +456,23 @@ window.HuesEffect = (function() {
       default: self.imageAlign = 0; break;
       }
 
-      if (!img) {
+      self.image = imageInfo;
+
+      if (texture) {
+        self.imageAnimated = false;
+        self.imageTexture = texture;
+      } else {
         if (imageInfo.name == "Lain") {
           console.log("Are you Lain of the Wired? Who are you really?");
         }
+
         self.imageAnimated = true;
         self.imageFrame = -1;
         self.imageFrames = imageInfo.animation;
         self.imageStartTime = startTime;
         self.imageFrameDuration = imageInfo.frameDuration / 1000;
-        /* Animation is handled in the imageAnimationUpdate() function */
-        return;
-      } else {
-        self.imageAnimated = false;
+        /* Texture is handled in the imageAnimationUpdate() function */
       }
-
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
-
-      self.img = img;
 
       self.imageSizeUpdate();
       self.renderNeeded = true;
@@ -497,6 +547,7 @@ window.HuesEffect = (function() {
       var canvas = gl.canvas;
       if (canvas.width != canvas.clientWidth ||
           canvas.height != canvas.clientHeight) {
+        console.log("Updating canvas size");
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -517,8 +568,9 @@ window.HuesEffect = (function() {
       var scaleMode = self.scale;
       var canvasHeight = canvas.height;
       var canvasWidth = canvas.width;
-      var scaledHeight = img.height;
-      var scaledWidth = img.width;
+      var image = self.image;
+      var scaledHeight = image.height;
+      var scaledWidth = image.width;
       if (scaleMode == 1 ||
           (scaleMode == 2 && scaledHeight > canvasHeight)) {
         scaledWidth = scaledWidth * (canvasHeight / scaledHeight);
@@ -562,6 +614,16 @@ window.HuesEffect = (function() {
       imagePosition.right /= scaledWidth;
 
       self.imagePosition = imagePosition;
+
+      var gl = self.gl;
+      var imagePositionBuf = self.imagePositionBuf;
+      gl.bindBuffer(gl.ARRAY_BUFFER, imagePositionBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            imagePosition.left, imagePosition.top,
+            imagePosition.right, imagePosition.top,
+            imagePosition.left, imagePosition.bottom,
+            imagePosition.right, imagePosition.bottom]),
+          gl.DYNAMIC_DRAW);
     },
 
     imageAnimationUpdate: function(time) {
@@ -569,18 +631,20 @@ window.HuesEffect = (function() {
         return;
       }
 
-      var frames = self.imageFrames;
-      var frame = Math.floor(time / self.imageFrameDuration) % frames.length;
+      var image = self.image;
+
+      var textures = image.textures;
+      var frame = Math.floor((time - self.imageStartTime) /
+          self.imageFrameDuration) % textures.length;
 
       if (frame == self.imageFrame) {
         return;
       }
 
-      var img = frames[frame];
-      var gl = self.gl;
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+      var texture = image.textures[frame];
 
-      self.img = img;
+      self.imageTexture = texture;
+
       self.imageFrame = frame;
 
       self.imageSizeUpdate();
@@ -608,12 +672,12 @@ window.HuesEffect = (function() {
       var amount = 1.0 - (time - startTime) / duration;
       var radius = self.blurAmount;
       var direction = self.blurDirection;
-      var img = self.img;
+      var image = self.image;
       if (direction == 0) {
         self.blurX = 0;
-        self.blurY = (amount * radius) / img.height;
+        self.blurY = (amount * radius) / image.height;
       } else {
-        self.blurX = (amount * radius) / img.width;
+        self.blurX = (amount * radius) / image.width;
         self.blurY = 0;
       }
       self.renderNeeded = true;
@@ -674,13 +738,12 @@ window.HuesEffect = (function() {
 
       /* Vertex shader */
 
+      gl.bindTexture(gl.TEXTURE_2D, self.imageTexture);
+
       /* Set up the quad to render the screen on */
       var aPositionLoc = gl.getAttribLocation(shader, "a_position");
-      var positionBuf = gl.createBuffer();
+      var positionBuf = self.positionBuf;
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-            -1, -1, 1, -1, -1, 1, 1, 1]),
-          gl.STATIC_DRAW);
       gl.enableVertexAttribArray(aPositionLoc);
       gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 0, 0);
 
@@ -818,21 +881,25 @@ window.HuesEffect = (function() {
       });
     },
 
-    /* Set up the image texture to load waifus into */
-    setupImageTexture: function() {
-      if (self.imageTexture) {
+    setupVertexBuffers: function() {
+      if (self.positionBuf && self.imagePositionBuf) {
         return Promise.resolve();
       }
       return new Promise(function(resolve, reject) {
         var gl = self.gl;
-        var texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // TODO: allow switching between nearest and linear scaling?
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        self.imageTexture = texture;
+        var positionBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+              -1, -1, 1, -1, -1, 1, 1, 1]),
+            gl.STATIC_DRAW);
+        self.positionBuf = positionBuf;
+
+        var imagePositionBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, imagePositionBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+              0, 0, 1, 0, 0, 1, 1, 1]),
+            gl.DYNAMIC_DRAW);
+        self.imagePositionBuf = imagePositionBuf;
         return resolve();
       });
     },
@@ -842,6 +909,8 @@ window.HuesEffect = (function() {
      */
     setupCallbacks: function() {
       var hues = self.hues;
+      hues.addEventListener("imageload", self.imageLoadCallback);
+      hues.addEventListener("imageframeload", self.imageFrameLoadCallback);
       hues.addEventListener("huechange", self.hueChangeCallback);
       hues.addEventListener("imagechange", self.imageChangeCallback);
       hues.addEventListener("verticalblureffect",
@@ -859,7 +928,7 @@ window.HuesEffect = (function() {
       self.hues = hues;
       var setupPromise = self.getWebglContext(canvas)
         .then(self.compileShader)
-        .then(self.setupImageTexture)
+        .then(self.setupVertexBuffers)
         .then(self.setupCallbacks);
       self.setupPromise = setupPromise;
       return setupPromise;

@@ -185,6 +185,7 @@
   var setupProgress = function(rootElement) {
     return new Promise(function(resolve, reject) {
       var progressDiv = document.createElement("div");
+      progressDiv.style.background = "white";
       progressDiv.style.position = "relative";
       progressDiv.style.top = "50%";
       progressDiv.style.transform = "translateY(-50%);"
@@ -312,13 +313,13 @@
   }
   
   var initialize = function() {
-    var rootElement = setupRootElement();
+    var rootElement = setupRootElement()
+    .then(setupEffectCanvas);
     var progress = rootElement.then(setupProgress);
     var respack = rootElement.then(Hues.loadDefaultRespack);
 
     return Promise.all([rootElement, progress, respack])
     .then(function(args) { return args[0]; })
-    .then(setupEffectCanvas)
     .then(setupStatusArea)
     .then(setupKeyHandlers)
     .then(function() {

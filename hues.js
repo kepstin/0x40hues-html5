@@ -26,6 +26,7 @@
       respack: encodeURIComponent("0x40 Hues 5.0 Defaults"),
       /* In the default respack, this is "weapon" */
       song: 18,
+      image: -1,
       hues: "builtin",
     },
 
@@ -103,6 +104,25 @@
        * No parameters
        */
       progressend: [],
+
+      /* callback imageload(imageInfo, blob)
+       * Notify that image data has been completely loaded.
+       *
+       * The UI or effects library will presumably want to take the raw
+       * image data from the blob and convert it to whatever internal
+       * format is required.
+       */
+      imageload: [],
+
+      /* callback imageframeload(imageInfo, frameNumber, blob)
+       * Notify that data for an image animation frame has been completely
+       * loaded.
+       *
+       * The UI or effects library will presumably want to take the raw
+       * image data from the blob and convert it to whatever internal
+       * format is required.
+       */
+      imageframeload: [],
 
       /* User settings updates */
 
@@ -591,11 +611,13 @@
     var i;
     if (self["imageIndex"] === null) {
       i = Math.floor(Math.random() * images.length);
-    } else {
+    } else if (images.length > 1) {
       i = Math.floor(Math.random() * (images.length - 1));
       if (i >= self["imageIndex"]) {
         i += 1;
       }
+    } else {
+      i = 0;
     }
     changeImage(i);
   }
@@ -657,19 +679,25 @@
 
   /* Load configuration, which is set in a global (window) object */
   (function() {
-    var respackURI = window.huesConfig["respack"];
-    if (typeof(respackURI) !== 'undefined') {
-      self["defaults"]["respackURI"] = respackURI;
+    var respack = window.huesConfig.respack;
+    if (typeof(respack) !== 'undefined') {
+      console.log("huesConfig respack: " + respack);
+      self.defaults.respack = respack;
     }
 
-    var song = window.huesConfig["defaultSong"];
+    var song = window.huesConfig.defaultSong;
     if (typeof(song) !== 'undefined') {
-      self["defaults"]["song"] = song;
+      self.defaults.song = song;
+    }
+
+    var image = window.huesConfig.defaultImage;
+    if (typeof(image) !== 'undefined') {
+      self.defaults.image = image;
     }
 
     var autoMode = window.huesConfig["autoMode"];
     if (typeof(autoMode) !== 'undefined') {
-      setAutoMode(autoMode);
+      self.setAutoMode(autoMode);
     }
   })();
 
@@ -947,6 +975,20 @@
     });
   }
 
+  var loadRespackImageFetch = function(uri) {
+    return new Promise(function(resolve, reject) {
+      fetch(uri)
+      .catch(reject)
+      .then(function(response) {
+        if (!response.ok) {
+          reject(response.status);
+          return;
+        }
+        resolve(response);
+      });
+    });
+  }
+
   var loadRespackImageAnimationFrame = function(respack, image, i) {
     return new Promise(function(resolve, reject) {
       var name = encodeURIComponent(image["name"]);
@@ -954,36 +996,28 @@
       if (number.length < 2) {
         number = "0" + number;
       }
-      fetch(respack["uri"] + "/Animations/" + name + "/" + name + "_" +
-          number + ".png")
-      .catch(reject)
-      .then(function(response) {
-
-        if (response.status == 404) {
-          // The previous image was the last in the series
+      loadRespackImageFetch(respack["uri"] + "/Animations/" +
+          name + "/" + name + "_" + number + ".png")
+      .catch(function() {
+        return loadRespackImageFetch(respack["uri"] + "/Images/" +
+            name + "/" + name + "_" + number + ".png")
+      })
+      .then(function(response) { return response.blob() })
+      .then(function(blob) {
+        image.frames = i;
+        var next = loadRespackImageAnimationFrame(respack, image, i + 1);
+        self.callEventListeners("imageframeload", image, i, blob);
+        resolve(next);
+      })
+      .catch(function(error) {
+        if (error === 404) {
           console.log("If you got a 404 error there it was expected and " +
                 "unavoidable... You can just ignore it.");
           resolve(image);
-          return;
+        } else {
+          reject(error)
         }
-
-        if (!response.ok) {
-          reject(Error("Failed to fetch frame " + i + " of image " +
-                image["name"] + " in " + respack["name"] + ": " +
-                response.status + " " + response.statusText));
-          return;
-        }
-        
-        response.blob()
-        .catch(reject)
-        .then(function(blob) {
-          var img = document.createElement("img");
-          img.src = URL.createObjectURL(blob);
-          image["animation"].push(img);
-          resolve(loadRespackImageAnimationFrame(respack, image, i + 1));
-        });
-
-      });
+      })
     });
   }
 
@@ -991,13 +1025,13 @@
     return new Promise(function(resolve, reject) {
       // Animations are a bit tricky, since the xml file doesn't say how many
       // frames there are. We have to fetch them until we hit a missing file...
-      image["animation"] = [];
+      image.frames = 0;
       var i = 1;
 
       loadRespackImageAnimationFrame(respack, image, i)
       .catch(reject)
       .then(function() {
-        if (image["animation"].length == 0) {
+        if (image.frames == 0) {
           reject(Error("Animation for image " + image["name"] + " in " +
                 respack["name"] + " had no frames load"));
         } else {
@@ -1009,16 +1043,14 @@
 
   var loadRespackImageSingle = function(respack, image) {
     return new Promise(function(resolve, reject) {
-      var img = document.createElement("img");
-      img.addEventListener("error", function(error) {
-        reject(error);
-      });
-      img.addEventListener("load", function() {
-        image["img"] = img;
+      var name = encodeURIComponent(image["name"]);
+      loadRespackImageFetch(respack["uri"] + "/Images/" + name + ".png")
+      .then(function(response) { return response.blob() })
+      .then(function(blob) {
+        self.callEventListeners("imageload", image, blob);
         resolve(image);
-      });
-      img.src = respack["uri"] + "/Images/" +
-          encodeURIComponent(image["name"]) + ".png";
+      })
+      .catch(reject);
     });
   }
 
@@ -1193,10 +1225,10 @@
 
       if (respack["images"]) {
         addImages(respack["name"]);
-        if (self["defaults"]["image"] >= 0) {
-          self["imageIndex"] = self["defaults"]["image"];
-        } else {
+        if (self.defaults.image === -1) {
           randomImage();
+        } else {
+          changeImage(self.defaults.image);
         }
       }
       console.log("Loaded images:");
@@ -1314,6 +1346,7 @@
     startBeatAnalysis();
 
     self.callEventListeners("songchange", song);
+    self.callEventListeners("imagechange", self.image, audioCtx.currentTime);
 
     return Promise.resolve(song);
   };
@@ -1509,7 +1542,7 @@
       console.log("Starting beat analysis");
       self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
     }
-  }
+  };
 
   var stopBeatAnalysis = function() {
     console.log("Stopping beat analysis");
@@ -1521,7 +1554,7 @@
     var beat = { "buildup": null, "loop": null };
     self["beat"] = beat;
     self.callEventListeners("beat", beat);
-  }
+  };
 
 
   window.Hues = Hues;
