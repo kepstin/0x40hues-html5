@@ -184,14 +184,25 @@
 
   var setupProgress = function(rootElement) {
     return new Promise(function(resolve, reject) {
+      var progressContainer = document.createElement("div");
+      progressContainer.style.position = "absolute";
+      progressContainer.style.display = "block";
+      progressContainer.style.background = "white";
+      progressContainer.style.top = "0";
+      progressContainer.style.left = "0";
+      progressContainer.style.right = "0";
+      progressContainer.style.bottom = "0";
+      progressContainer.style.width = "100%";
+      progressContainer.style.height = "100%";
+      rootElement.appendChild(progressContainer);
+
       var progressDiv = document.createElement("div");
-      progressDiv.style.background = "white";
       progressDiv.style.position = "relative";
       progressDiv.style.top = "50%";
       progressDiv.style.transform = "translateY(-50%);"
       progressDiv.style.textAlign = "center";
       progressDiv.style.fontSize = "600%";
-      rootElement.appendChild(progressDiv);
+      progressContainer.appendChild(progressDiv);
 
       var completed = 0;
       var total = 0;
@@ -214,7 +225,7 @@
       Hues.addEventListener("progressstart", function() {
         completed = 0;
         total = 0;
-        progressDiv.style.display = "block";
+        progressContainer.style.display = "block";
         updateProgress();
       });
       Hues.addEventListener("progress", function(done, added) {
@@ -224,7 +235,7 @@
       });
       Hues.addEventListener("progressend", function() {
         setTimeout(function() {
-          progressDiv.style.display = "none";
+          progressContainer.style.display = "none";
           resolve(rootElement);
         }, 500);
       });

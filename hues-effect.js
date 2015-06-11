@@ -403,7 +403,6 @@ window.HuesEffect = (function() {
     },
 
     imageFrameLoadCallback: function(image, frame, blob) {
-      console.log("got an animation frame!");
       if (typeof(image.textures) === "undefined") {
         image.textures = [];
       }
@@ -419,8 +418,6 @@ window.HuesEffect = (function() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
-
-        console.log("adding texture for frame " + frame);
 
         image.textures[frame - 1] = texture;
         image.width = img.naturalWidth;
