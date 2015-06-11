@@ -258,44 +258,54 @@
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {
-        case 102:
-          key = 'f'
-          break;
+        case 102: key = 'f'; break;
         }
       }
-      if (key == 'f') {
-        console.log("F - Toggle AutoMode");
+      switch (key) {
+      case 'f':
+      case 'F':
         if (Hues.getAutoMode() == "normal") {
           Hues.setAutoMode("full auto");
         } else {
           Hues.setAutoMode("normal");
         }
+        break;
       }
     });
     /* Arrow keys don't have "press" events */
     window.addEventListener("keyup", function(e) {
-      switch (e.keyCode) {
-      case 16:
-        console.log("Shift - Random Song");
+      var key = e.key;
+      if (!key) {
+        switch (e.keyCode) {
+        case 16: key = 'Shift'; break;
+        case 37: key = 'ArrowLeft'; break;
+        case 38: key = 'ArrowUp'; break;
+        case 39: key = 'ArrowRight'; break;
+        case 40: key = 'ArrowDown'; break;
+        }
+      }
+      switch (key) {
+      case 'Shift':
         Hues.randomSong();
         break;
-      case 37:
-        console.log("Left Arrow - Previous Image");
+      case 'ArrowDown':
+      case 'Down':
+        console.log("Down Arrow - Previous Song");
+        Hues.prevSong();
+        break;
+      case 'ArrowUp':
+      case 'Up':
+        Hues.nextSong();
+        break;
+      case 'ArrowLeft':
+      case 'Left':
         Hues.setAutoMode("normal");
         Hues.prevImage();
         break;
-      case 38:
-        console.log("Up Arrow - Next Song");
-        Hues.nextSong();
-        break;
-      case 39:
-        console.log("Right Arrow - Next Image");
+      case 'ArrowRight':
+      case 'Right':
         Hues.setAutoMode("normal");
         Hues.nextImage();
-        break;
-      case 40:
-        console.log("Down Arrow - Previous Song");
-        Hues.prevSong();
         break;
       }
     });
