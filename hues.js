@@ -134,6 +134,15 @@
        */
       automodechange: [],
 
+      /* callback volumechange(muted, gain)
+       * The audio volume setting has been changed.
+       * Pretty much only called in response to user-initiated volume changes.
+       *
+       * muted: boolean, whether mute is currently in effect.
+       * gain: number, the amount of gain in decibels
+       */
+      volumechange: [],
+
       /* Active media and effects */
 
       /* callback huechange(hueInfo, beatTime, fadeDuration)
@@ -735,8 +744,87 @@
   var currentLoopStartTime = null;
 
   var gainNode = audioCtx.createGain();
+  gainNode.connect(audioCtx.destination);
+
+  var muted = false;
+  if (localStorage.getItem('Hues.muted') === "true") {
+    muted = true;
+  }
+  var savedGain = parseFloat(localStorage.getItem('Hues.gain'));
+  if (savedGain === null) {
+    savedGain = -10.0;
+  }
+
+  var clampGain = function() {
+    if (savedGain < -80) {
+      savedGain = -80;
+    } else if (savedGain > 5) {
+      savedGain = 5;
+    }
+    console.log(muted, savedGain);
+  };
+  var dbToVolume = function(db) {
+    return Math.pow(10, db / 20);
+  };
+
+  clampGain();
+  if (muted) {
+    gainNode.gain.value = 0;
+  } else {
+    gainNode.gain.value = dbToVolume(savedGain);
+  }
+
+  addEventListener('volumechange', function(muted, gain) {
+    localStorage.setItem('Hues.muted', muted);
+    localStorage.setItem('Hues.gain', gain);
+  });
 
   Hues["respack"] = {};
+
+  var isMuted = function() {
+    return muted;
+  };
+  Hues["isMuted"] = isMuted;
+  var getVolume = function() {
+    return savedGain;
+  };
+  Hues.getVolume = getVolume;
+  var mute = function() {
+    if (!muted) {
+      muted = true;
+      gainNode.gain.value = 0;
+      self.callEventListeners('volumechange', muted, savedGain);
+    }
+  };
+  Hues["mute"] = mute;
+  var unmute = function() {
+    if (muted) {
+      muted = false;
+      gainNode.gain.value = dbToVolume(savedGain);
+      self.callEventListeners('volumechange', muted, savedGain);
+    }
+  };
+  Hues["unmute"] = unmute;
+
+  var setVolume = function(db) {
+    savedGain = db;
+    clampGain();
+    if (!muted) {
+      gainNode.gain.value = dbToVolume(savedGain);
+      self.callEventListeners('volumechange', muted, savedGain);
+    }
+  };
+  Hues.setVolume = setVolume;
+
+  var adjustVolume = function(db) {
+    savedGain += db;
+    clampGain();
+    if (!muted) {
+      gainNode.gain.value = dbToVolume(savedGain);
+      self.callEventListeners('volumechange', muted, savedGain);
+    }
+  };
+  Hues.adjustVolume = adjustVolume;
 
 
   var loadRespackInfo = function(respack) {
@@ -1293,7 +1381,7 @@
       buildupDuration = buildupBuffer.duration;
       buildupSource = audioCtx.createBufferSource();
       buildupSource.buffer = buildupBuffer;
-      buildupSource.connect(audioCtx.destination);
+      buildupSource.connect(gainNode);
     }
 
     var loopBuffer = song["loopBuffer"];
@@ -1301,7 +1389,7 @@
     var loopSource = audioCtx.createBufferSource();
     loopSource.buffer = loopBuffer;
     loopSource.loop = true;
-    loopSource.connect(audioCtx.destination);
+    loopSource.connect(gainNode);
 
     var beatDuration = loopDuration / song["rhythm"].length;
     console.log("Beat duration is " + beatDuration);

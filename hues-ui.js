@@ -87,6 +87,27 @@
     Hues.addEventListener("beat", updateBeatField);
   };
 
+  var setupStatusVolume = function(statusDiv) {
+    var volumeDiv = document.createElement("div");
+    statusDiv.appendChild(volumeDiv);
+    var volumeLabel = document.createElement("span");
+    volumeLabel.textContent = "V=";
+    volumeDiv.appendChild(volumeLabel);
+    var volumeField = document.createElement("span");
+    volumeField.textContent = "0.0dB";
+    volumeDiv.appendChild(volumeField);
+
+    var updateVolumeField = function(muted, gain) {
+      if (muted) {
+        volumeField.textContent = "MUTED";
+      } else {
+        volumeField.textContent = gain.toFixed(1) + "dB";
+      }
+    };
+    Hues.addEventListener("volumechange", updateVolumeField);
+    updateVolumeField(Hues.isMuted(), Hues.getVolume());
+  };
+
   var setupStatusHue = function(statusDiv) {
     var hueDiv = document.createElement("div");
     statusDiv.appendChild(hueDiv);
@@ -172,6 +193,7 @@
 
     setupStatusMode(statusDiv);
     setupStatusImage(statusDiv);
+    setupStatusVolume(statusDiv);
     setupStatusBeatNum(statusDiv);
     setupStatusHue(statusDiv);
     setupStatusHueName(statusDiv);
@@ -267,19 +289,41 @@
     window.addEventListener("keypress", function(e) {
       /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
        * Because lol javascript */
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      console.log(e);
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {
+        case 43: key = '+'; break;
+        case 45: key = '-'; break;
+        case 61: key = '='; break;
         case 102: key = 'f'; break;
+        case 109: key = 'm'; break;
         }
       }
       switch (key) {
+      case '+':
+      case '=':
+        Hues.adjustVolume(1.0);
+        break;
+      case '-':
+        Hues.adjustVolume(-1.0);
+        break;
       case 'f':
-      case 'F':
         if (Hues.getAutoMode() == "normal") {
           Hues.setAutoMode("full auto");
         } else {
           Hues.setAutoMode("normal");
+        }
+        break;
+      case 'm':
+        if (Hues.isMuted()) {
+          Hues.unmute();
+        } else {
+          Hues.mute();
         }
         break;
       }
