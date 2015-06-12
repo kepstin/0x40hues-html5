@@ -289,10 +289,11 @@
     window.addEventListener("keypress", function(e) {
       /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
        * Because lol javascript */
-      if (event.defaultPrevented) {
+      if (e.defaultPrevented) {
         return;
       }
 
+      console.log(e);
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {
@@ -329,6 +330,10 @@
     });
     /* Arrow keys don't have "press" events */
     window.addEventListener("keyup", function(e) {
+      if (e.defaultPrevented) {
+        return;
+      }
+
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {
@@ -345,7 +350,6 @@
         break;
       case 'ArrowDown':
       case 'Down':
-        console.log("Down Arrow - Previous Song");
         Hues.prevSong();
         break;
       case 'ArrowUp':
