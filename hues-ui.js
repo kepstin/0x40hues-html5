@@ -293,7 +293,6 @@
         return;
       }
 
-      console.log(e);
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {

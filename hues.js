@@ -751,7 +751,7 @@
     muted = true;
   }
   var savedGain = parseFloat(localStorage.getItem('Hues.gain'));
-  if (savedGain === null || savedGain.isNaN()) {
+  if (savedGain === null || isNaN(savedGain)) {
     savedGain = -10.0;
   }
 
@@ -761,7 +761,6 @@
     } else if (savedGain > 5) {
       savedGain = 5;
     }
-    console.log(muted, savedGain);
   };
   var dbToVolume = function(db) {
     return Math.pow(10, db / 20);
