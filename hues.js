@@ -751,7 +751,7 @@
     muted = true;
   }
   var savedGain = parseFloat(localStorage.getItem('Hues.gain'));
-  if (savedGain === null) {
+  if (savedGain === null || savedGain.isNaN()) {
     savedGain = -10.0;
   }
 
