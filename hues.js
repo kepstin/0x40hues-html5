@@ -1486,8 +1486,10 @@
       return;
     }
 
-    /* All non-null beat characters cancel blackout */
-    self.callEventListeners("blackouteffect", false, beat.time);
+    /* All non-null beat characters cancel blackout - except blackouts */
+    if (!(current == '+' || current == '|')) {
+      self.callEventListeners("blackouteffect", false, beat.time);
+    }
 
     /* Here's the current annotated list of beat effects:
      *

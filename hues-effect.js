@@ -373,6 +373,7 @@ window.HuesEffect = (function() {
     blurY: 0,
 
     /* Blackout calculations */
+    blackoutActive: false,
     blackoutClear: false,
     blackoutFadeinActive: false,
     shortBlackoutActive: false,
@@ -490,18 +491,28 @@ window.HuesEffect = (function() {
     blackoutEffectCallback: function(blackoutActive, beatTime) {
       self.shortBlackoutActive = false;
       if (blackoutActive) {
-        self.blackoutClear = false;
-        self.blackoutFadeinActive = true;
+        /* +++ should behave like +.. to match flash, so only do the blackout
+         * fade animation if blackout isn't currently active */
+        if (!self.blackoutActive) {
+          self.blackoutClear = false;
+          self.blackoutFadeinActive = true;
+        }
       } else {
         self.blackoutClear = true;
       }
+      self.blackoutActive = blackoutActive;
       self.blackoutStartTime = beatTime;
     },
 
     shortBlackoutEffectCallback: function(beatTime, duration) {
       self.blackoutClear = false;
       self.shortBlackoutActive = true;
-      self.blackoutFadeinActive = true;
+      /* If you get a combination +|, the short blackout on the | continues the
+       * blackout from the +, rather than redoing the fade. */
+      if (!self.blackoutActive) {
+        self.blackoutFadeinActive = true;
+      }
+      self.blackoutActive = false;
       self.blackoutStartTime = beatTime;
       self.shortBlackoutDuration = duration;
     },
