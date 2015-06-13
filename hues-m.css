@@ -1,13 +1,12 @@
 .hues-m-beatbar {
   position: absolute;
   top: 0;
-  width: 80%;
   max-width: 992px;
   height: 30px;
   margin: 0 auto;
   overflow: hidden;
-  left: 0;
-  right: 0;
+  left: 8px;
+  right: 8px;
   color: white;
   background: rgba(127,127,127,0.5);
   border-color: rgba(0,0,0,0.5);
@@ -56,9 +55,9 @@
 }
 
 .hues-m-beatcenter span {
-  -moz-animation-duration: 250ms;
-  -webkit-animation-duration: 250ms;
-  animation-duration: 250ms;
+  -moz-animation-duration: 150ms;
+  -webkit-animation-duration: 150ms;
+  animation-duration: 150ms;
   -moz-animation-name: hues-m-beatcenter;
   -webkit-animation-name: hues-m-beatcenter;
   animation-name: hues-m-beatcenter;
@@ -70,6 +69,9 @@
   from {
     opacity: 1;
   }
+  50% {
+    opacity: 1;
+  }
   to {
     opacity: 0;
   }
@@ -78,12 +80,18 @@
   from {
     opacity: 1;
   }
+  50% {
+    opacity: 1;
+  }
   to {
     opacity: 0;
   }
 }
 @keyframes hues-m-beatcenter {
   from {
+    opacity: 1;
+  }
+  50% {
     opacity: 1;
   }
   to {
