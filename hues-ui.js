@@ -165,24 +165,6 @@
     creditsDiv.appendChild(creditsLink);
   }
 
-  var setupStatusBeats = function(statusDiv) {
-    var beatsDiv = document.createElement("div");
-    beatsDiv.style.overflowX = "hidden";
-    beatsDiv.style.whiteSpace = "nowrap";
-    statusDiv.appendChild(beatsDiv);
-    var beatsLabel = document.createElement("span");
-    beatsLabel.textContent = ">>";
-    beatsDiv.appendChild(beatsLabel);
-    var beatsField = document.createElement("span");
-    beatsDiv.appendChild(beatsField);
-
-    var updateBeats = function(beat) {
-      var beats = Hues.getBeatString();
-      beatsField.textContent = beats;
-    }
-    Hues.addEventListener("beat", updateBeats);
-  }
-
   var setupStatusArea = function(rootElement) {
     var statusDiv = document.createElement("div");
     statusDiv.style.position = "absolute";
@@ -199,7 +181,9 @@
     setupStatusHueName(statusDiv);
     setupStatusSong(statusDiv);
     setupStatusCredits(statusDiv);
-    setupStatusBeats(statusDiv);
+
+    var modui = new HuesUIModern(Hues);
+    modui.setupUI(rootElement);
 
     return Promise.resolve(rootElement);
   }
