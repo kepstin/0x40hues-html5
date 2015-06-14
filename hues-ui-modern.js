@@ -9,8 +9,6 @@ window.HuesUIModern = (function() {
 
     Self.prototype.root = null
 
-    Self.prototype.styleLink = null
-
     Self.prototype.beatBar = null
     Self.prototype.beatLeft = null
     Self.prototype.beatRight = null
@@ -180,16 +178,6 @@ window.HuesUIModern = (function() {
     Self.prototype.setupUI = function(root) {
       this.root = root
       var doc = root.ownerDocument
-
-      if (!this.styleLink) {
-        var styleLink = doc.createElement("link")
-        styleLink.rel = "stylesheet"
-        styleLink.type = "text/css"
-        styleLink.href = "hues-m.css"
-        styleLink.media = "all"
-        doc.head.appendChild(styleLink)
-        this.styleLink = styleLink
-      }
 
       this.setupBeatBar()
       this.setupControls()
