@@ -1461,7 +1461,7 @@
     } else {
       newIndex = Math.floor(Math.random() * (hues.length - 1));
       if (newIndex >= index) {
-        index += 1;
+        newIndex += 1;
       }
     }
     var hue = hues[newIndex];
