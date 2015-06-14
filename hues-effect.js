@@ -625,6 +625,9 @@ window.HuesEffect = (function() {
         imagePosition.right = scaledWidth;
       }
 
+      image.scaledHeight = scaledHeight;
+      image.scaledWidth = scaledWidth;
+
       /* Convert coordinates to GL texture space */
       imagePosition.top /= scaledHeight;
       imagePosition.bottom /= scaledHeight;
@@ -694,9 +697,9 @@ window.HuesEffect = (function() {
       var image = self.image;
       if (direction == 0) {
         self.blurX = 0;
-        self.blurY = (amount * radius) / canvas.height;
+        self.blurY = (amount * radius) / image.scaledHeight;
       } else {
-        self.blurX = (amount * radius) / canvas.width;
+        self.blurX = (amount * radius) / image.scaledWidth;
         self.blurY = 0;
       }
       self.renderNeeded = true;
