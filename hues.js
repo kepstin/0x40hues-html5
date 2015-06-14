@@ -1299,6 +1299,10 @@
       var builtin = respacks[0];
       var respack = respacks[1];
 
+      if (builtin["images"]) {
+        addImages("builtin");
+      }
+
       if (respack["hues"]) {
         addHues(respack["name"]);
       } else {
