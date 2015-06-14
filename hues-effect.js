@@ -491,7 +491,7 @@ window.HuesEffect = (function() {
     blackoutEffectCallback: function(blackoutActive, beatTime) {
       self.shortBlackoutActive = false;
       if (blackoutActive) {
-        /* +++ should behave like +.. to match flash, so only do the blackout
+        /* ++ should behave like +. to match flash, so only do the blackout
          * fade animation if blackout isn't currently active */
         if (!self.blackoutActive) {
           self.blackoutClear = false;
@@ -515,6 +515,16 @@ window.HuesEffect = (function() {
       self.blackoutActive = false;
       self.blackoutStartTime = beatTime;
       self.shortBlackoutDuration = duration;
+    },
+
+    fadeHueEffectCallback: function(beatTime, duration, prevHue, newHue) {
+      /* TODO: This might be handled by huechange later */
+      self.hueFadeActive = true;
+      self.hueFadeStartTime = beatTime;
+      self.hueFadeDuration = duration;
+      self.hueFadeStartHue = prevHue.rgb;
+      self.hueFadeEndHue = newHue.rgb;
+      self.renderNeeded = true;
     },
 
     /* Effect animations */
@@ -929,6 +939,7 @@ window.HuesEffect = (function() {
       hues.addEventListener("blackouteffect", self.blackoutEffectCallback);
       hues.addEventListener("shortblackouteffect",
           self.shortBlackoutEffectCallback);
+      hues.addEventListener("fadehueeffect", self.fadeHueEffectCallback);
       hues.addEventListener("frame", self.frameCallback);
     },
 

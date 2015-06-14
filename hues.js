@@ -1043,6 +1043,13 @@
               songNode = songIterator.iterateNext();
             }
 
+            /* Replace U+2011 NON-BREAKING HYPHEN with standard hyphen.
+             * For bug compatibility with Xmas respack */
+            song.rhythm = song.rhythm.replace(/‑/g, '-');
+            if (song.buildupRhythm) {
+              song.buildupRhythm = song.buildupRhythm.replace(/‑/g, '-');
+            }
+
             respack["songs"].push(song);
             self.callEventListeners("progress", 0, 1);
             songPromises.push(loadRespackSongMedia(respack, song)
