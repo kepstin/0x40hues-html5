@@ -41,23 +41,6 @@
     Hues.addEventListener("automodechange", updateModeField);
   }
 
-  var setupStatusImage = function(statusDiv) {
-    var imageDiv = document.createElement("div");
-    statusDiv.appendChild(imageDiv);
-    var imageLabel = document.createElement("span");
-    imageLabel.textContent = "I=";
-    imageDiv.appendChild(imageLabel);
-    var imageField = document.createElement("span");
-    imageField.textContent = "undefined";
-    imageDiv.appendChild(imageField);
-
-    var updateImageField = function(imageInfo) {
-      imageField.textContent = imageInfo["name"].toUpperCase();
-    }
-    updateImageField(Hues.getCurrentImage());
-    Hues.addEventListener("imagechange", updateImageField);
-  };
-
   var setupStatusBeatNum = function(statusDiv) {
     var beatDiv = document.createElement("div");
     statusDiv.appendChild(beatDiv);
@@ -139,21 +122,6 @@
     Hues.addEventListener("huechange", updateHueField);
   };
 
-  var setupStatusSong = function(statusDiv) {
-    var songField = document.createElement("div");
-    statusDiv.appendChild(songField);
-
-    var updateSongField = function(song) {
-      if (song) {
-        songField.textContent = song["title"].toUpperCase();
-      } else {
-        songField.textContent = "[UNDEFINED]";
-      }
-    }
-    updateSongField(Hues.getCurrentSong());
-    Hues.addEventListener("songchange", updateSongField);
-  }
-
   var setupStatusCredits = function(statusDiv) {
     var creditsDiv = document.createElement("div");
     creditsDiv.style.opacity = "0.50";
@@ -174,12 +142,10 @@
     rootElement.appendChild(statusDiv);
 
     setupStatusMode(statusDiv);
-    setupStatusImage(statusDiv);
     setupStatusVolume(statusDiv);
     setupStatusBeatNum(statusDiv);
     setupStatusHue(statusDiv);
     setupStatusHueName(statusDiv);
-    setupStatusSong(statusDiv);
     setupStatusCredits(statusDiv);
 
     var modui = new HuesUIModern(Hues);
