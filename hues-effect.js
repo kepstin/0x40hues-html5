@@ -680,12 +680,13 @@ window.HuesEffect = (function() {
       var amount = 1.0 - (time - startTime) / duration;
       var radius = self.blurAmount;
       var direction = self.blurDirection;
+      var canvas = self.gl.canvas;
       var image = self.image;
       if (direction == 0) {
         self.blurX = 0;
-        self.blurY = (amount * radius) / image.height;
+        self.blurY = (amount * radius) / canvas.height;
       } else {
-        self.blurX = (amount * radius) / image.width;
+        self.blurX = (amount * radius) / canvas.width;
         self.blurY = 0;
       }
       self.renderNeeded = true;
