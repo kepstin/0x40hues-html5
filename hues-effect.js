@@ -326,6 +326,10 @@ window.HuesEffect = (function() {
     /* The webgl context being used for rendering */
     gl: null,
 
+    /* Canvas saved width and height, to detect resizes */
+    canvasClientWidth: 0,
+    canvasClientHeight: 0,
+
     /* The compiled shader program */
     shader: null,
 
@@ -563,12 +567,15 @@ window.HuesEffect = (function() {
     canvasSizeUpdate: function() {
       var gl = self.gl;
       var canvas = gl.canvas;
-      if (canvas.width != canvas.clientWidth ||
-          canvas.height != canvas.clientHeight) {
+      if (self.canvasClientWidth != canvas.clientWidth ||
+          self.canvasClientHeight != canvas.clientHeight) {
         console.log("Updating canvas size");
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+	var ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(canvas.clientWidth * ratio);
+        canvas.height = Math.round(canvas.clientHeight * ratio);
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+	self.canvasClientWidth = canvas.clientWidth;
+	self.canvasClientHeight = canvas.clientHeight;
 
         self.imageSizeUpdate();
         self.renderNeeded = true;
