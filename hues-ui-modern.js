@@ -3,28 +3,34 @@ window.HuesUIModern = (function() {
   var Self = (function() {
     var Self = function(hues) {
       this.hues = hues;
+
+      this.root = null
+
+      this.beatBar = null
+      this.beatLeft = null
+      this.beatRight = null
+      this.beatCenter = null
+
+      this.controls = null
+
+      this.imageName = null
+      this.imageNameLink = null
+      this.imageNameText = null
+
+      this.songTitle = null
+      this.songTitleLink = null
+      this.songTitleText = null
+
+      this.hueName = null
+
+      this.volInput = null
+      this.volLabel = null
+
+      this.queuedResizeImageName = null
+      this.queuedResizeSongTitle = null
+
+      Object.seal(this)
     }
-
-    Self.prototype.hues = null
-
-    Self.prototype.root = null
-
-    Self.prototype.beatBar = null
-    Self.prototype.beatLeft = null
-    Self.prototype.beatRight = null
-    Self.prototype.beatCenter = null
-
-    Self.prototype.controls = null
-
-    Self.prototype.imageName = null
-    Self.prototype.imageNameLink = null
-    Self.prototype.imageNameText = null
-
-    Self.prototype.songTitle = null
-    Self.prototype.songTitleLink = null
-    Self.prototype.songTitleText = null
-
-    Self.prototype.queuedResizeSongTitle = null
 
     Self.prototype.updateBeatBar = function(beat) {
       var beats = this.hues.getBeatString()
@@ -59,6 +65,11 @@ window.HuesUIModern = (function() {
       }
     }
 
+    Self.prototype.handleQueuedResizeImageName = function() {
+      this.resizeImageName()
+      this.queuedResizeImageName = null;
+    }
+
     Self.prototype.updateImageName = function(image) {
       var name = this.imageName
 
@@ -84,7 +95,7 @@ window.HuesUIModern = (function() {
       var title = this.songTitle
 
       while (title.firstElementChild) {
-        title.removeChild(title.firstElementChild);
+        title.removeChild(title.firstElementChild)
       }
 
       var link = title.ownerDocument.createElement("a")
@@ -119,11 +130,70 @@ window.HuesUIModern = (function() {
       this.queuedResizeSongTitle = null;
     }
 
+    Self.prototype.updateHueName = function(hueInfo) {
+      var name = this.hueName
+
+      while (name.firstElementChild) {
+        name.removeChild(name.firstElementChild)
+      }
+
+      var text = name.ownerDocument.createElement("span")
+      text.textContent = hueInfo.hue.name.toUpperCase()
+      name.appendChild(text)
+    }
+
     Self.prototype.handleResize = function() {
       if (!this.queuedResizeSongTitle) {
         this.queuedResizeSongTitle = window.requestAnimationFrame(
             this.handleQueuedResizeSongTitle.bind(this))
       }
+      if (!this.queuedResizeImageName) {
+        this.queuedResizeImageName = window.requestAnimationFrame(
+            this.handleQueuedResizeImageName.bind(this))
+      }
+    }
+
+    Self.prototype.updateVolume = function(muted, gain) {
+      var label = this.volLabel
+      var input = this.volInput
+
+      var text = gain.toFixed(1) + "dB"
+      if (muted) {
+        text = "(" + text + ")"
+      }
+      label.textContent = text
+      input.value = gain
+    }
+
+    Self.prototype.setupVolume = function(box) {
+      var volBar = box.ownerDocument.createElement("div")
+      volBar.className = "hues-m-vol-bar"
+      box.appendChild(volBar)
+
+      var label = box.ownerDocument.createElement("button")
+      volBar.appendChild(label)
+      this.volLabel = label
+      label.addEventListener("click", (function() {
+        if (this.hues.isMuted()) {
+          this.hues.unmute()
+        } else {
+          this.hues.mute()
+        }
+      }).bind(this))
+
+      var input = box.ownerDocument.createElement("input")
+      input.type = "range"
+      input.min = -60
+      input.max = 5
+      input.step = 1
+      volBar.appendChild(input)
+      this.volInput = input
+      input.addEventListener("input", (function() {
+        this.hues.setVolume(parseFloat(input.value))
+      }).bind(this))
+
+      this.updateVolume(this.hues.isMuted(), this.hues.getVolume())
+      Hues.addEventListener("volumechange", this.updateVolume.bind(this))
     }
 
     Self.prototype.setupBeatBar = function() {
@@ -173,6 +243,22 @@ window.HuesUIModern = (function() {
       controls.appendChild(songTitle)
       this.songTitle = songTitle
       this.hues.addEventListener("songchange", this.updateSongTitle.bind(this))
+
+      var leftBox = doc.createElement("div")
+      leftBox.className = "hues-m-leftbox"
+      controls.appendChild(leftBox)
+
+      var hueName = doc.createElement("div")
+      hueName.className = "hues-m-huename"
+      leftBox.appendChild(hueName)
+      this.hueName = hueName
+      this.hues.addEventListener("huechange", this.updateHueName.bind(this))
+
+      this.setupVolume(leftBox)
+
+      var rightBox = doc.createElement("div")
+      rightBox.className = "hues-m-rightbox"
+      controls.appendChild(rightBox)
     }
 
     Self.prototype.setupUI = function(root) {
@@ -185,7 +271,7 @@ window.HuesUIModern = (function() {
       window.addEventListener("resize", this.handleResize.bind(this))
     }
 
-    return Self;
+    return Self
   })()
 
   return function(hues) {
@@ -193,5 +279,6 @@ window.HuesUIModern = (function() {
     this.setupUI = function(rootElement) {
       self.setupUI(rootElement)
     }
+    Object.seal(this)
   }
 })()

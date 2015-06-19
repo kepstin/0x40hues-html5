@@ -810,8 +810,8 @@
     clampGain();
     if (!muted) {
       gainNode.gain.value = dbToVolume(savedGain);
-      self.callEventListeners('volumechange', muted, savedGain);
     }
+    self.callEventListeners('volumechange', muted, savedGain);
   };
   Hues.setVolume = setVolume;
 
@@ -820,8 +820,8 @@
     clampGain();
     if (!muted) {
       gainNode.gain.value = dbToVolume(savedGain);
-      self.callEventListeners('volumechange', muted, savedGain);
     }
+    self.callEventListeners('volumechange', muted, savedGain);
   };
   Hues.adjustVolume = adjustVolume;
 

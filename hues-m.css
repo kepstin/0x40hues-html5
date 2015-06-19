@@ -14,7 +14,7 @@
   border-style: solid;
 }
 
-.hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename {
+.hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
   color: white;
   background: rgba(0,0,0,0.7);
   height: 20px;
@@ -22,6 +22,13 @@
   font-size: 12px;
   overflow: hidden;
   white-space: nowrap;
+  border-radius: 10px;
+}
+
+.hues-m-huename {
+  font-size: 8px;
+  height: 12px;
+  line-height: 12px;
   border-radius: 10px;
 }
 
@@ -108,19 +115,19 @@
   position: absolute;
   bottom: 0;
   max-width: 992px;
-  height: 54px;
+  height: 104px;
   margin: 0 auto;
   overflow: hidden;
   left: 8px;
   right: 8px;
-  color: white;
+  color: rgba(255,255,255,0.7);
   background: rgba(127,127,127,0.5);
   border-color: rgba(0,0,0,0.5);
   border-width: 4px 4px 0;
   border-style: solid;
 }
 
-.hues-m-songtitle, .hues-m-imagename {
+.hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
   position: absolute;
   left: 8px;
   right: 8px;
@@ -147,9 +154,156 @@
   font-size: 8px;
 }
 
-@media (min-width: 960px) {
+.hues-m-leftbox {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  right: 50%;
+  height: 54px;
+}
+
+.hues-m-rightbox {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  right: 0;
+  height: 54px;
+}
+
+.hues-m-huename {
+  bottom: 5px;
+}
+
+.hues-m-vol-bar {
+  position: absolute;
+  height: 20px;
+  bottom: 25px;
+  left: 32px;
+  right: 32px;
+}
+
+.hues-m-vol-bar > button {
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 12px;
+  right: 0;
+  height: 12px;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  line-height: 12px;
+  text-align: center;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+  border: none;
+}
+.hues-m-vol-bar > input {
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 12px;
+}
+
+/* Fun slider stuff! */
+
+input[type=range] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 12px;
+  background: transparent;
+  -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 0;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: rgb(255,255,255);
+  margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 0;
+}
+
+input[type=range]::-moz-range-thumb {
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: rgb(255,255,255);
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  background: transparent; /* Hides the slider so custom styles can be added */
+  border-color: transparent;
+  color: transparent;
+  height: 4px;
+  border-width: 4px 0;
+}
+
+input[type=range]::-ms-fill-lower {
+  background: rgba(255,255,255,0.7);
+}
+input[type=range]::-ms-fill-upper {
+  background: rgba(0,0,0,0.7);
+}
+
+input[type=range]::-ms-thumb {
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: rgb(255,255,255);
+}
+
+@media (min-width: 768px) {
+  .hues-m-controls {
+    height: 54px;
+  }
   .hues-m-songtitle, .hues-m-imagename {
     left: 192px;
     right: 192px;
+  }
+  .hues-m-leftbox {
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: 192px;
+    height: 54px;
+  }
+  .hues-m-rightbox {
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 192px;
+    height: 54px;
   }
 }

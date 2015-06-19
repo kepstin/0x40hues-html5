@@ -70,58 +70,6 @@
     Hues.addEventListener("beat", updateBeatField);
   };
 
-  var setupStatusVolume = function(statusDiv) {
-    var volumeDiv = document.createElement("div");
-    statusDiv.appendChild(volumeDiv);
-    var volumeLabel = document.createElement("span");
-    volumeLabel.textContent = "V=";
-    volumeDiv.appendChild(volumeLabel);
-    var volumeField = document.createElement("span");
-    volumeField.textContent = "0.0dB";
-    volumeDiv.appendChild(volumeField);
-
-    var updateVolumeField = function(muted, gain) {
-      if (muted) {
-        volumeField.textContent = "MUTED";
-      } else {
-        volumeField.textContent = gain.toFixed(1) + "dB";
-      }
-    };
-    Hues.addEventListener("volumechange", updateVolumeField);
-    updateVolumeField(Hues.isMuted(), Hues.getVolume());
-  };
-
-  var setupStatusHue = function(statusDiv) {
-    var hueDiv = document.createElement("div");
-    statusDiv.appendChild(hueDiv);
-    var hueLabel = document.createElement("span");
-    hueLabel.textContent = "C=$0x";
-    hueDiv.appendChild(hueLabel);
-    var hueField = document.createElement("span");
-    hueDiv.appendChild(hueField);
-
-    var updateHueField = function(hueInfo) {
-      var hueNum = hueInfo["index"].toString(16);
-      if (hueNum.length < 2) {
-        hueNum = "0" + hueNum;
-      }
-      hueField.textContent = hueNum.toUpperCase();
-    };
-    updateHueField(Hues.getCurrentHue());
-    Hues.addEventListener("huechange", updateHueField);
-  };
-
-  var setupStatusHueName = function(statusDiv) {
-    var hueField = document.createElement("div");
-    statusDiv.appendChild(hueField);
-
-    var updateHueField = function(hueInfo) {
-      hueField.textContent = hueInfo["hue"]["name"].toUpperCase();
-    }
-    updateHueField(Hues.getCurrentHue());
-    Hues.addEventListener("huechange", updateHueField);
-  };
-
   var setupStatusCredits = function(statusDiv) {
     var creditsDiv = document.createElement("div");
     creditsDiv.style.opacity = "0.50";
@@ -142,10 +90,6 @@
     rootElement.appendChild(statusDiv);
 
     setupStatusMode(statusDiv);
-    setupStatusVolume(statusDiv);
-    setupStatusBeatNum(statusDiv);
-    setupStatusHue(statusDiv);
-    setupStatusHueName(statusDiv);
     setupStatusCredits(statusDiv);
 
     var modui = new HuesUIModern(Hues);
