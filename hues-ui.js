@@ -182,6 +182,10 @@
 
     /* Ok, not technically a *key* handler, but still. */
     window.addEventListener("wheel", function(e) {
+      if (e.defaultPrevented) {
+        return;
+      }
+
       if (e.deltaY < 0) {
         Hues.adjustVolume(1.0);
       } else if (e.deltaY > 0) {
@@ -190,12 +194,12 @@
     });
 
     window.addEventListener("keypress", function(e) {
-      /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
-       * Because lol javascript */
       if (e.defaultPrevented) {
         return;
       }
 
+      /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
+       * Because lol javascript */
       var key = e.key;
       if (!key) {
         switch (e.keyCode) {
