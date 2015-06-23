@@ -180,6 +180,15 @@
     /* Even though we have the root element, keys are going to be installed
      * on the window. */
 
+    /* Ok, not technically a *key* handler, but still. */
+    window.addEventListener("wheel", function(e) {
+      if (e.deltaY < 0) {
+        Hues.adjustVolume(1.0);
+      } else if (e.deltaY > 0) {
+        Hues.adjustVolume(-1.0);
+      }
+    });
+
     window.addEventListener("keypress", function(e) {
       /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
        * Because lol javascript */
