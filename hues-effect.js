@@ -330,6 +330,11 @@ window.HuesEffect = (function() {
       left: 0,
       right: 0
     },
+    /* For synchronized animations */
+    imageBeatSync: 0,
+    songBeatSync: 0,
+    songStartTime: 0,
+    songBeatDuration: 0,
 
     /* Stuff for blur calculations */
     blurActive: false,
@@ -438,9 +443,30 @@ window.HuesEffect = (function() {
         self.imageStartTime = startTime;
         self.imageFrameDuration = imageInfo.frameDuration / 1000;
         /* Texture is handled in the imageAnimationUpdate() function */
+
+        var beatSync = parseFloat(imageInfo.beatSync);
+        if (isFinite(beatSync)) {
+          self.imageBeatSync = beatSync;
+        } else {
+          self.imageBeatSync = 0;
+        }
       }
 
       self.imageSizeUpdate();
+      self.imageBeatSyncUpdate();
+      self.renderNeeded = true;
+    },
+
+    songChangeCallback: function(song, loopStart, buildStart, beatDuration) {
+      var beatSync = parseFloat(song.beatSync);
+      if (isFinite(beatSync)) {
+        self.songBeatSync = beatSync;
+      } else {
+        self.songBeatSync = 0;
+      }
+      self.songStartTime = loopStart;
+      self.songBeatDuration = beatDuration;
+      self.imageBeatSyncUpdate();
       self.renderNeeded = true;
     },
 
@@ -617,6 +643,22 @@ window.HuesEffect = (function() {
           gl.DYNAMIC_DRAW);
     },
 
+    imageBeatSyncUpdate: function() {
+      if (self.imageBeatSync > 0 && self.songBeatSync > 0) {
+        var image = self.image;
+
+        self.imageStartTime = self.songStartTime;
+        self.imageFrameDuration = self.songBeatDuration *
+            self.songBeatSync * self.imageBeatSync /
+            image.textures.length;
+
+        console.log("Beat sync image: " + self.imageBeatSync + " song: " +
+            self.songBeatSync + " beat duration: " + self.songBeatDuration +
+            " frames: " + image.textures.length +
+            " calculated frame duration: " + self.imageFrameDuration);
+      }
+    },
+
     imageAnimationUpdate: function(time) {
       if (!self.imageAnimated) {
         return;
@@ -627,6 +669,10 @@ window.HuesEffect = (function() {
       var textures = image.textures;
       var frame = Math.floor((time - self.imageStartTime) /
           self.imageFrameDuration) % textures.length;
+
+      if (frame < 0) {
+        frame = textures.length - 1 + frame;
+      }
 
       if (frame == self.imageFrame) {
         return;
@@ -945,6 +991,7 @@ window.HuesEffect = (function() {
       hues.addEventListener("imageframeload", self.imageFrameLoadCallback);
       hues.addEventListener("huechange", self.hueChangeCallback);
       hues.addEventListener("imagechange", self.imageChangeCallback);
+      hues.addEventListener("songchange", self.songChangeCallback);
       hues.addEventListener("verticalblureffect",
           self.verticalBlurEffectCallback);
       hues.addEventListener("horizontalblureffect",

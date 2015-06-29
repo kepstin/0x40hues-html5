@@ -177,13 +177,17 @@
        */
       imagechange: [],
 
-      /* callback songchange(songInfo)
+      /* callback songchange(songInfo, loopStart, buildStart, beatDuration)
        * Indicated that the currently playing song has changed.
        * This is called any time a user-initiated song change is done, via the
        * changeSong(), prevSong(), or nextSong() functions.
        * Also can be called during initialization or when loading a respack.
        *
        * songInfo: Same as the return value of getCurrentSong()
+       * loopStart: Timestamp that the loop (will) start(ed) playing.
+       * buildStart: Timestamp that the build (will) start(ed) playing.
+       *   If there is no build, this is the same as loopStartTime.
+       * beatDuration: Length of one beat character in the rhythm string.
        */
       songchange: [],
 
@@ -1439,7 +1443,8 @@
 
     startBeatAnalysis();
 
-    self.callEventListeners("songchange", song);
+    self.callEventListeners("songchange",
+	song, loopStart, buildupStart, beatDuration);
     self.callEventListeners("imagechange", self.image, audioCtx.currentTime);
 
     return Promise.resolve(song);
