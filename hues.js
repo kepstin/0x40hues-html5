@@ -1119,23 +1119,69 @@
     });
   }
 
+  var loadRespackImageAnimationFrame2 = function(respack, image, i) {
+    return new Promise(function(resolve, reject) {
+      var name = encodeURIComponent(image["name"]);
+      var number = i.toString();
+      if (number.length < 2) {
+        number = "0" + number;
+      }
+      loadRespackImageFetch(respack["uri"] + "/Animations/" +
+          name + "/" + name + "_" + number + ".png")
+      .catch(function() {
+        return loadRespackImageFetch(respack["uri"] + "/Images/" +
+            name + "/" + name + "_" + number + ".png")
+      })
+      .then(function(response) { return response.blob() })
+      .then(function(blob) {
+        image.frames = i;
+        self.callEventListeners("imageframeload", image, i, blob);
+        resolve();
+      })
+      .catch(reject);
+    });
+  }
+
   var loadRespackImageAnimation = function(respack, image) {
     return new Promise(function(resolve, reject) {
-      // Animations are a bit tricky, since the xml file doesn't say how many
-      // frames there are. We have to fetch them until we hit a missing file...
-      image.frames = 0;
-      var i = 1;
+      image.frames = parseInt(image.frames);
+      if (isFinite(image.frames)) {
+        // This is an enhanced respack that includes frame counts! Yay!
+        // We can parallel load the images here, and give better progress
+        // indication.
+        console.log("frames", image.frames);
 
-      loadRespackImageAnimationFrame(respack, image, i)
-      .catch(reject)
-      .then(function() {
-        if (image.frames == 0) {
-          reject(Error("Animation for image " + image["name"] + " in " +
-                respack["name"] + " had no frames load"));
-        } else {
-          resolve(image);
+        var promises = [];
+
+        self.callEventListeners("progress", 0, image.frames);
+        for (var i = 1; i <= image.frames; i++) {
+          promises.push(
+            loadRespackImageAnimationFrame2(respack, image, i)
+            .then(function() {
+              self.callEventListeners("progress", 1, 0);
+            })
+          );
         }
-      });
+
+        resolve(Promise.all(promises));
+      } else {
+        // Standard respack animations are a bit tricky, since the xml file
+        // doesn't say how many frames there are. We have to fetch them until
+        // we hit a missing file...
+        image.frames = 0;
+        var i = 1;
+
+        loadRespackImageAnimationFrame(respack, image, i)
+        .catch(reject)
+        .then(function() {
+          if (image.frames == 0) {
+            reject(Error("Animation for image " + image["name"] + " in " +
+                  respack["name"] + " had no frames load"));
+          } else {
+            resolve(image);
+          }
+        });
+      }
     });
   }
 
@@ -1424,7 +1470,7 @@
       }
     }
 
-    var buildupStart = audioCtx.currentTime;
+    var buildupStart = audioCtx.currentTime + 0.050;
     var loopStart = buildupStart + buildupDuration;
 
     if (buildupSource) {
