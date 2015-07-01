@@ -93,7 +93,7 @@ window.HuesEffect = (function() {
     "varying vec2 v_imageSample;\n" +
     "vec4 blur() {\n" +
     "  if (v_imageSample.x < 0.0 || v_imageSample.y < 0.0 ||\n" +
-    "      v_imageSample.x > 1.0 || v_imageSample.x > 1.0) {\n" +
+    "      v_imageSample.x > 1.0 || v_imageSample.y > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  return texture2D(u_image, v_imageSample);\n" +
@@ -102,7 +102,7 @@ window.HuesEffect = (function() {
     "varying vec2 v_blurSample[9];\n" +
     "vec4 blur() {\n" +
     "  if (v_blurSample[4].x < 0.0 || v_blurSample[4].y < 0.0 ||\n" +
-    "      v_blurSample[4].x > 1.0 || v_blurSample[4].x > 1.0) {\n" +
+    "      v_blurSample[4].x > 1.0 || v_blurSample[4].y > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  vec4 color = vec4(0.0);\n" +
@@ -150,7 +150,7 @@ window.HuesEffect = (function() {
     "varying vec2 v_blurSample[27];\n" +
     "vec4 blur() {\n" +
     "  if (v_blurSample[13].x < 0.0 || v_blurSample[13].y < 0.0 ||\n" +
-    "      v_blurSample[13].x > 1.0 || v_blurSample[13].x > 1.0) {\n" +
+    "      v_blurSample[13].x > 1.0 || v_blurSample[13].y > 1.0) {\n" +
     "    return vec4(0.0);\n" +
     "  }\n" +
     "  vec4 color = vec4(0.0);\n" +
@@ -603,16 +603,16 @@ window.HuesEffect = (function() {
        * vPadding is positive if image taller than the canvas, negative if
        * smaller than the canvas. */
       var vPadding = scaledHeight - canvasHeight;
-      imagePosition.top = vPadding / 2;
-      imagePosition.bottom = scaledHeight - (vPadding / 2);
+      imagePosition.top = Math.floor(vPadding / 2);
+      imagePosition.bottom = Math.floor(scaledHeight - (vPadding / 2));
 
       /* The horizontal padding depends on the alignment. */
       var hPadding = scaledWidth - canvasWidth;
       var smartAlign = self.smartAlign;
       var align = self.imageAlign;
       if (!smartAlign || align == 0) {
-        imagePosition.left = hPadding / 2;
-        imagePosition.right = scaledWidth - (hPadding / 2);
+        imagePosition.left = Math.floor(hPadding / 2);
+        imagePosition.right = Math.floor(scaledWidth - (hPadding / 2));
       } else if (align == 1) {
         imagePosition.left = 0;
         imagePosition.right = scaledWidth - hPadding;
