@@ -667,11 +667,14 @@ window.HuesEffect = (function() {
       var image = self.image;
 
       var textures = image.textures;
-      var frame = Math.floor((time - self.imageStartTime) /
-          self.imageFrameDuration) % textures.length;
-
-      if (frame < 0) {
-        frame = textures.length - 1 + frame;
+      var frame;
+      if (time < self.imageStartTime) {
+        frame = textures.length +
+          Math.floor((time - self.imageStartTime) /
+              self.imageFrameDuration) % textures.length - 1;
+      } else {
+        frame = Math.floor((time - self.imageStartTime) /
+            self.imageFrameDuration) % textures.length;
       }
 
       if (frame == self.imageFrame) {
