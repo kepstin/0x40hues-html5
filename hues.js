@@ -1149,8 +1149,6 @@
         // This is an enhanced respack that includes frame counts! Yay!
         // We can parallel load the images here, and give better progress
         // indication.
-        console.log("frames", image.frames);
-
         var promises = [];
 
         self.callEventListeners("progress", 0, image.frames);
