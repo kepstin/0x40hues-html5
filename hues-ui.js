@@ -1,308 +1,290 @@
-/* Approximation of Retro UI */
-(function() {
+/* 0x40 Hues of HTML5
+ * UI Framework and Loading screen
+ *
+ * Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+window.HuesUI = (function() {
   "use strict";
-  var selector = window.huesConfig["uiSelector"];
-  var autoPlay = window.huesConfig["autoPlay"];
-  if (typeof(selector) === 'undefined') {
-    selector = 'body';
-  }
-  if (typeof(autoPlay) === 'undefined') {
-    autoPlay = false;
-  }
+  var Self = (function() {
+    var Self = function() {
+      this.root = null
 
-  var HuesUI = {};
+      this.error = null
 
-  var setupRootElement = function() {
-    var rootElement = document.querySelector(selector);
-    if (!rootElement) {
-      return Promise.reject(Error("Cannot find requested root element " +
-            rootElement + " on page."));
+      this.progressContainer = null
+      this.progress = null
+      this.progressCompleted = 0
+      this.progressTotal = 0
+
+      this.canvas = null
+
+      Object.seal(this)
     }
-    /*while (rootElement.firstChild) {
-      rootElement.removeChild(rootElement.firstChild);
-    }*/
-    return Promise.resolve(rootElement);
-  }
 
-  var setupStatusMode = function(statusDiv) {
-    var modeDiv = document.createElement("div");
-    statusDiv.appendChild(modeDiv);
-    var modeLabel = document.createElement("span");
-    modeLabel.textContent = "M=";
-    modeDiv.appendChild(modeLabel);
-    var modeField = document.createElement("span");
-    modeField.textContent = "undefined";
-    modeDiv.appendChild(modeField);
+    Self.prototype.setupError = function() {
+      var error = this.root.ownerDocument.createElement("div")
+      error.className = "hues-error"
+      this.root.appendChild(error)
+      this.error = error
+    }
 
-    var updateModeField = function(autoMode) {
-      modeField.textContent = autoMode.toUpperCase();
-    };
-    updateModeField(Hues.getAutoMode());
-    Hues.addEventListener("automodechange", updateModeField);
-  }
+    Self.prototype.renderError = function(error) {
+      console.log(error)
+      this.error.className = "hues-error-visible"
+      this.error.textContent = error
+    }
 
-  var setupStatusBeatNum = function(statusDiv) {
-    var beatDiv = document.createElement("div");
-    statusDiv.appendChild(beatDiv);
-    var beatLabel = document.createElement("span");
-    beatLabel.textContent = "B=$0x";
-    beatDiv.appendChild(beatLabel);
-    var beatField = document.createElement("span");
-    beatField.textContent = "0000";
-    beatDiv.appendChild(beatField);
-
-    var updateBeatField = function(beat) {
-      var beatNum = "0";
-      if (beat["buildup"] !== null) {
-        beatNum = beat["buildup"].toString(16);
-      } else if (beat["loop"] !== null) {
-        beatNum = beat["loop"].toString(16);
+    Self.prototype.updateProgress = function() {
+      var progress = 0
+      if (this.progressTotal > 0) {
+        progress = this.progressCompleted / this.progressTotal
       }
-      var padding = 4 - beatNum.length;
+
+      progress = Math.floor(progress * 0x40)
+
+      var progressStr = progress.toString(16)
+      var padding = 2 - progressStr.length
       if (padding > 0) {
-        beatNum = "0".repeat(padding) + beatNum;
+        progressStr = "0".repeat(padding) + progressStr
       }
-      if (beat["buildup"] !== null) {
-        beatNum += " (BUILD)";
-      }
-      beatField.textContent = beatNum.toUpperCase();
-    };
-    Hues.addEventListener("beat", updateBeatField);
-  };
+      this.progress.textContent = "0x" + progressStr
+    }
 
-  var setupStatusCredits = function(statusDiv) {
-    var creditsDiv = document.createElement("div");
-    creditsDiv.style.opacity = "0.50";
-    statusDiv.appendChild(creditsDiv);
-    var creditsLink = document.createElement("a");
-    creditsLink.href = "https://github.com/kepstin/0x40hues-html5";
-    creditsLink.textContent = "0x40 HUES OF HTML5 BY KEPSTIN";
-    creditsLink.target = "_blank";
-    creditsDiv.appendChild(creditsLink);
-  }
+    Self.prototype.handleProgressStart = function() {
+      this.progressCompleted = 0
+      this.progressTotal = 0
+      this.progressContainer.className = "hues-progress-container-visible"
 
-  var setupStatusArea = function(rootElement) {
-    var statusDiv = document.createElement("div");
-    statusDiv.style.position = "absolute";
-    statusDiv.style.left = "0";
-    statusDiv.style.right = "0";
-    statusDiv.style.bottom = "0";
-    rootElement.appendChild(statusDiv);
+      this.updateProgress()
+    }
 
-    setupStatusMode(statusDiv);
-    setupStatusCredits(statusDiv);
+    Self.prototype.handleProgress = function(done, added) {
+      this.progressCompleted += done;
+      this.progressTotal += added;
 
-    var modui = new HuesUIModern(Hues);
-    modui.setupUI(rootElement);
+      this.updateProgress()
+    }
 
-    return Promise.resolve(rootElement);
-  }
+    Self.prototype.fadeoutProgress = function() {
+      var self = this;
+      return new Promise(function(resolve, reject) {
+        self.progressContainer.className = "hues-progress-container"
+        window.setTimeout(function() {
+          resolve()
+        }, 500)
+      })
+    }
 
-  var setupProgress = function(rootElement) {
-    return new Promise(function(resolve, reject) {
-      var progressContainer = document.createElement("div");
-      progressContainer.style.position = "absolute";
-      progressContainer.style.display = "block";
-      progressContainer.style.background = "white";
-      progressContainer.style.top = "0";
-      progressContainer.style.left = "0";
-      progressContainer.style.right = "0";
-      progressContainer.style.bottom = "0";
-      progressContainer.style.width = "100%";
-      progressContainer.style.height = "100%";
-      rootElement.appendChild(progressContainer);
+    Self.prototype.setupProgress = function() {
+      var progressContainer = this.root.ownerDocument.createElement("div")
+      progressContainer.className = "hues-progress-container"
+      this.root.appendChild(progressContainer)
+      this.progressContainer = progressContainer
 
-      var progressDiv = document.createElement("div");
-      progressDiv.style.position = "relative";
-      progressDiv.style.top = "50%";
-      progressDiv.style.transform = "translateY(-50%);"
-      progressDiv.style.textAlign = "center";
-      progressDiv.style.fontSize = "600%";
-      progressContainer.appendChild(progressDiv);
+      var progress = this.root.ownerDocument.createElement("div")
+      progress.className = "hues-progress"
+      progressContainer.appendChild(progress)
+      this.progress = progress
 
-      var completed = 0;
-      var total = 0;
-      var updateProgress = function() {
-        var progress;
-        if (total == 0) {
-          progress = 0;
-        } else {
-          progress = completed / total;
+      Hues.addEventListener("progressstart",
+          this.handleProgressStart.bind(this))
+      Hues.addEventListener("progress", this.handleProgress.bind(this))
+
+      return Promise.resolve()
+    }
+
+    Self.prototype.setupEffectCanvas = function() {
+      var canvas = this.root.ownerDocument.createElement("canvas")
+      canvas.className = "hues-canvas"
+      this.root.appendChild(canvas)
+      this.canvas = canvas
+
+      return window.HuesEffect.setup(window.Hues, canvas)
+    }
+
+    Self.prototype.setupKeyHandlers = function() {
+      /* Ok, not technically a *key* handler, but still. */
+      this.root.addEventListener("wheel", function(e) {
+        if (e.defaultPrevented) {
+          return
         }
-        progress = Math.floor(progress * 64);
 
-        var progressStr = progress.toString(16);
-        var padding = 2 - progressStr.length;
-        if (padding > 0) {
-          progressStr = "0".repeat(padding) + progressStr;
+        if (e.deltaY < 0) {
+          Hues.adjustVolume(1.0)
+        } else if (e.deltaY > 0) {
+          Hues.adjustVolume(-1.0)
         }
-        progressDiv.textContent = "0x" + progressStr;
-      };
-      Hues.addEventListener("progressstart", function() {
-        completed = 0;
-        total = 0;
-        progressContainer.style.display = "block";
-        updateProgress();
-      });
-      Hues.addEventListener("progress", function(done, added) {
-        completed += done;
-        total += added;
-        updateProgress();
-      });
-      Hues.addEventListener("progressend", function() {
-        setTimeout(function() {
-          progressContainer.style.display = "none";
-          resolve(rootElement);
-        }, 500);
-      });
-    });
+        e.preventDefault()
+      })
+
+      /* Normal keys that return 'press' events after a full press+release */
+      this.root.addEventListener("keypress", function(e) {
+        if (e.defaultPrevented) {
+          return
+        }
+
+        /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
+         * Because lol javascript */
+        var key = e.key
+        if (!key) {
+          switch (e.keyCode) {
+          case 43: key = '+'; break
+          case 45: key = '-'; break
+          case 61: key = '='; break
+          case 102: key = 'f'; break
+          case 109: key = 'm'; break
+          }
+        }
+        switch (key) {
+        case '+':
+        case '=':
+          Hues.adjustVolume(1.0)
+          e.preventDefault()
+          break
+        case '-':
+          Hues.adjustVolume(-1.0)
+          e.preventDefault()
+          break
+        case 'f':
+          if (Hues.getAutoMode() == "normal") {
+            Hues.setAutoMode("full auto")
+          } else {
+            Hues.setAutoMode("normal")
+          }
+          e.preventDefault()
+          break
+        case 'm':
+          if (Hues.isMuted()) {
+            Hues.unmute()
+          } else {
+            Hues.mute()
+          }
+          e.preventDefault()
+          break
+        }
+      })
+
+      /* Arrow keys and modifiers don't get "press" events */
+      window.addEventListener("keyup", function(e) {
+        if (e.defaultPrevented) {
+          return;
+        }
+
+        var key = e.key;
+        if (!key) {
+          switch (e.keyCode) {
+          case 16: key = 'Shift'; break
+          case 37: key = 'ArrowLeft'; break
+          case 38: key = 'ArrowUp'; break
+          case 39: key = 'ArrowRight'; break
+          case 40: key = 'ArrowDown'; break
+          }
+        }
+        switch (key) {
+        case 'Shift':
+          Hues.randomSong()
+          e.preventDefault()
+          break
+        case 'ArrowDown':
+        case 'Down':
+          Hues.prevSong()
+          e.preventDefault()
+          break
+        case 'ArrowUp':
+        case 'Up':
+          Hues.nextSong()
+          e.preventDefault()
+          break
+        case 'ArrowLeft':
+        case 'Left':
+          Hues.setAutoMode("normal")
+          Hues.prevImage()
+          e.preventDefault()
+          break
+        case 'ArrowRight':
+        case 'Right':
+          Hues.setAutoMode("normal")
+          Hues.nextImage()
+          e.preventDefault()
+          break
+        }
+      })
+
+      return Promise.resolve()
+    }
+
+    Self.prototype.initialize = function(options) {
+      if (typeof(options) === 'undefined') {
+        options = window.huesConfig
+      }
+      var selector = options.selector
+      if (typeof(selector) === 'undefined') {
+        selector = 'body';
+      }
+
+      this.root = document.querySelector(selector)
+      if (!this.root) {
+        throw new Error("Cannot find requested root element " + selector)
+      }
+      this.root.className += " hues-root"
+
+      this.setupError()
+
+      /* From this point on, all work is done with promises, and errors
+       * are user-visible */
+      var progress = this.setupProgress()
+
+      var respack = progress.then(Hues.loadDefaultRespack);
+      var canvas = progress.then(this.setupEffectCanvas.bind(this))
+
+      var modernUI = new HuesUIModern(Hues)
+
+      Promise.all([respack, canvas])
+      .then(function() { modernUI.setupUI(this.root) }.bind(this))
+      .then(this.fadeoutProgress.bind(this))
+      .then(this.setupKeyHandlers.bind(this))
+      .then(function() { if (options.autoPlay) { return Hues.playSong() } })
+      .catch(this.renderError.bind(this))
+    }
+
+    return Self
+  })()
+
+  return function() {
+    var self = new Self()
+    this.initialize = function(options) {
+      self.initialize(options)
+    }
+    Object.seal(this)
   }
-
-  var setupEffectCanvas = function(rootElement) {
-    var canvas = document.createElement("canvas");
-    canvas.style.position = "absolute";
-    canvas.style.display = "block";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.right = "0";
-    canvas.style.bottom = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.width = rootElement.clientWidth;
-    canvas.height = rootElement.clientHeight;
-    rootElement.appendChild(canvas);
-
-    return window.HuesEffect.setup(window.Hues, canvas)
-      .then(function() { return rootElement; });
-  }
-
-  var setupKeyHandlers = function(rootElement) {
-    /* Even though we have the root element, keys are going to be installed
-     * on the window. */
-
-    /* Ok, not technically a *key* handler, but still. */
-    window.addEventListener("wheel", function(e) {
-      if (e.defaultPrevented) {
-        return;
-      }
-
-      if (e.deltaY < 0) {
-        Hues.adjustVolume(1.0);
-      } else if (e.deltaY > 0) {
-        Hues.adjustVolume(-1.0);
-      }
-    });
-
-    window.addEventListener("keypress", function(e) {
-      if (e.defaultPrevented) {
-        return;
-      }
-
-      /* Firefox returns the character in 'key', chrome the code in 'keyCode'.
-       * Because lol javascript */
-      var key = e.key;
-      if (!key) {
-        switch (e.keyCode) {
-        case 43: key = '+'; break;
-        case 45: key = '-'; break;
-        case 61: key = '='; break;
-        case 102: key = 'f'; break;
-        case 109: key = 'm'; break;
-        }
-      }
-      switch (key) {
-      case '+':
-      case '=':
-        Hues.adjustVolume(1.0);
-        break;
-      case '-':
-        Hues.adjustVolume(-1.0);
-        break;
-      case 'f':
-        if (Hues.getAutoMode() == "normal") {
-          Hues.setAutoMode("full auto");
-        } else {
-          Hues.setAutoMode("normal");
-        }
-        break;
-      case 'm':
-        if (Hues.isMuted()) {
-          Hues.unmute();
-        } else {
-          Hues.mute();
-        }
-        break;
-      }
-    });
-    /* Arrow keys don't have "press" events */
-    window.addEventListener("keyup", function(e) {
-      if (e.defaultPrevented) {
-        return;
-      }
-
-      var key = e.key;
-      if (!key) {
-        switch (e.keyCode) {
-        case 16: key = 'Shift'; break;
-        case 37: key = 'ArrowLeft'; break;
-        case 38: key = 'ArrowUp'; break;
-        case 39: key = 'ArrowRight'; break;
-        case 40: key = 'ArrowDown'; break;
-        }
-      }
-      switch (key) {
-      case 'Shift':
-        Hues.randomSong();
-        break;
-      case 'ArrowDown':
-      case 'Down':
-        Hues.prevSong();
-        break;
-      case 'ArrowUp':
-      case 'Up':
-        Hues.nextSong();
-        break;
-      case 'ArrowLeft':
-      case 'Left':
-        Hues.setAutoMode("normal");
-        Hues.prevImage();
-        break;
-      case 'ArrowRight':
-      case 'Right':
-        Hues.setAutoMode("normal");
-        Hues.nextImage();
-        break;
-      }
-    });
-  }
-  
-  var initialize = function() {
-    var rootElement = setupRootElement()
-    .then(setupEffectCanvas);
-    var progress = rootElement.then(setupProgress);
-    var respack = rootElement.then(Hues.loadDefaultRespack);
-
-    return Promise.all([rootElement, progress, respack])
-    .then(function(args) { return args[0]; })
-    .then(setupStatusArea)
-    .then(setupKeyHandlers)
-    .then(function() {
-      if (autoPlay) { return Hues.playSong(); }
-    }).catch(function(error) {
-      console.log(error);
-    });
-  }
-  HuesUI["initialize"] = initialize;
-
-  window.HuesUI = HuesUI;
-})();
+})()
 
 if (document.readyState == "complete") {
-  HuesUI.initialize();
+  var huesUI = new HuesUI();
+  huesUI.initialize();
 } else {
   document.addEventListener("readystatechange", function() {
     if (document.readyState == "complete") {
-      HuesUI.initialize();
+      var huesUI = new HuesUI();
+      huesUI.initialize();
     }
   });
 }

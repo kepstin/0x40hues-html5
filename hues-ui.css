@@ -1,0 +1,70 @@
+@font-face {
+  font-family: 'PetMe64Web';
+  font-style: normal;
+  font-weight: normal;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  src: local("PetMe64Web");
+  src: local('Pet Me 64'), local('Pet Me 64'), url("PetMe64.woff") format('woff');
+}
+
+.hues-root {
+  font-family: 'PetMe64Web';
+  font-size: 8px;
+}
+
+.hues-root a:link, .hues-root a:visited {
+  color: black;
+}
+
+.hues-progress-container, .hues-progress-container-visible {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.5s;
+  background: white;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+.hues-progress-container-visible {
+  opacity: 1;
+}
+.hues-error {
+  display: none;
+}
+.hues-error-visible {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: 50%;
+  margin: 0 auto;
+  left: 0;
+  right: 0;
+  top: 50%;
+  padding-top: 6em;
+  text-align: center;
+}
+
+.hues-progress {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 600%;
+}
+
+.hues-canvas {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}

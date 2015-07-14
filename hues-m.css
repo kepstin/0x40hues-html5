@@ -141,7 +141,7 @@
   bottom: 29px;
 }
 
-.hues-m-songtitle > a, .hues-m-imagename > a {
+.hues-m-songtitle > a:link, .hues-m-songtitle > a:visited, .hues-m-imagename > a:link, .hues-m-imagename > a:visited {
   display: block;
   color: inherit;
   text-decoration: none;
