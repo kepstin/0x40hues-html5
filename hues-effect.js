@@ -846,6 +846,9 @@ window.HuesEffect = (function() {
         }
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
 
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
         self.gl = gl;
 
         return resolve();
