@@ -1161,7 +1161,17 @@
           );
         }
 
-        resolve(Promise.all(promises));
+	resolve(Promise.all(promises)
+          .catch(function(error) {
+            if (error === 404) {
+              return Promise.reject(
+                  new Error("Some animation frames for " + image.name +
+                      " failed to load"));
+            } else {
+              return Promise.reject(error);
+            }
+          })
+        );
       } else {
         // Standard respack animations are a bit tricky, since the xml file
         // doesn't say how many frames there are. We have to fetch them until
