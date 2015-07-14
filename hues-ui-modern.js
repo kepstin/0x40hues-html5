@@ -1,3 +1,27 @@
+/* 0x40 Hues of HTML5
+ * "Modern" style UI controls
+ *
+ * Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 window.HuesUIModern = (function() {
   "use strict";
   var Self = (function() {
@@ -38,17 +62,17 @@ window.HuesUIModern = (function() {
       var current = beats[0]
       var rest = beats.slice(1)
 
-      this.beatLeft.textContent = rest;
-      this.beatRight.textContent = rest;
+      this.beatLeft.textContent = rest
+      this.beatRight.textContent = rest
 
 
       if (current != ".") {
         while (this.beatCenter.firstElementChild) {
-          this.beatCenter.removeChild(this.beatCenter.firstElementChild);
+          this.beatCenter.removeChild(this.beatCenter.firstElementChild)
         }
         var span = this.beatCenter.ownerDocument.createElement("span")
-        span.textContent = current;
-        this.beatCenter.appendChild(span);
+        span.textContent = current
+        this.beatCenter.appendChild(span)
       }
     }
 
