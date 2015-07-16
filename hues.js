@@ -1343,55 +1343,93 @@
   }
   Hues["loadRespack"] = loadRespack;
 
-  // TODO: The is basically the main setup function?
-  var loadDefaultRespack = function() {
-    self.callEventListeners("progressstart");
-    var builtin = loadRespack("builtin");
+  // Do core initialization, loading "builtin" data and requested respacks
+  var initializePromise = null;
+  Hues.initialize = function(options) {
+    if (!initializePromise) {
+      initializePromise = new Promise(function (resolve, reject) {
+        self.callEventListeners("progressstart");
 
-    var respackURI = self["defaults"]["respack"];
+        var builtinPromise = loadRespack("builtin");
 
-    var respack = loadRespack(respackURI);
-
-    var setupPromise = Promise.all([builtin, respack])
-    .then(function(respacks) {
-      var builtin = respacks[0];
-      var respack = respacks[1];
-
-      if (respack["hues"]) {
-        addHues(respack["name"]);
-      } else {
-        addHues("builtin");
-      }
-      console.log("Loaded hues:");
-      console.log(self["hues"]);
-      randomHue();
-
-      /* Preset the currently selected song, but without starting playback */
-      if (respack["songs"]) {
-        addSongs(respack["name"]);
-        self["songIndex"] = self["defaults"]["song"];
-        self["song"] = self["songs"][self["defaults"]["song"]];
-      }
-      console.log("Loaded songs:");
-      console.log(self["songs"]);
-
-      if (respack["images"]) {
-        addImages(respack["name"]);
-        if (self.defaults.image === -1) {
-          randomImage();
-        } else {
-          changeImage(self.defaults.image);
+        var optRespack = options.respack;
+        if (typeof(optRespack) === 'undefined') {
+          optRespack = self.defaults.respack;
         }
-      }
-      console.log("Loaded images:");
-      console.log(self["images"]);
-      self.callEventListeners("progressend");
-    });
 
-    self.setupPromise = setupPromise;
-    return setupPromise;
+        var respacks = [].concat(optRespack);
+        var respackPromises = [builtinPromise];
+
+        for (var i = 0; i < respacks.length; i++) {
+          console.log("Loading respack " + respacks[i]);
+          respackPromises.push(loadRespack(respacks[i]));
+        }
+
+        var setupPromise = Promise.all(respackPromises)
+        .then(function(respacks) {
+          var builtin = respacks.shift();
+
+          var haveHues = false;
+          for (var i = 0; i < respacks.length; i++) {
+            var respack = respacks[i];
+            if (respack.hues) {
+              addHues(respack.name);
+              haveHues = true;
+            }
+            if (respack.songs) {
+              addSongs(respack.name);
+            }
+            if (respack.images) {
+              addImages(respack.name);
+            }
+          }
+
+          if (!haveHues) {
+            addHues(builtin.name);
+          }
+          console.log("Loaded hues:");
+          console.log(self["hues"]);
+          var hue = options.hue;
+          if (typeof(hue) === 'undefined') {
+            hue = 0x40 - 1;
+          }
+          if (hue === -1) {
+            randomHue();
+          } else {
+            changeHue(hue);
+          }
+
+          console.log("Loaded songs:");
+          console.log(self["songs"]);
+          /* Preset the selected song */
+          var song = options.song;
+          if (typeof(song) === 'undefined') {
+            song = 0;
+          }
+          self.songIndex = song;
+          self.song = self.songs[song];
+
+          console.log("Loaded images:");
+          console.log(self["images"]);
+          /* Preset the selected image */
+          var image = options.image;
+          if (typeof(image) === 'undefined') {
+            image = 0;
+          }
+          if (image === -1) {
+            randomImage();
+          } else {
+            changeImage(image);
+          }
+
+          self.callEventListeners("progressend");
+        });
+
+        resolve(setupPromise);
+      });
+    }
+    return initializePromise;
   }
-  Hues["loadDefaultRespack"] = loadDefaultRespack;
 
   var dumpRespackAnimation = function(img, image) {
     var i = 0;
@@ -1518,6 +1556,20 @@
   };
   Hues["getCurrentHue"] = getCurrentHue;
 
+  var changeHue = function(hueIndex) {
+    var hues = self.hues;
+    if (hueIndex < 0) {
+      hueIndex = 0;
+    }
+    if (hueIndex >= hues.length) {
+      hueIndex = hues.length - 1;
+    }
+    var hue = hues[hueIndex];
+    self.hueIndex = hueIndex;
+    self.hue = hue;
+    self.callEventListeners("huechange", {"index": hueIndex, "hue": hue});
+  }
+
   var randomHue = function() {
     var hues = self["hues"];
     var index = self["hueIndex"];
@@ -1530,10 +1582,7 @@
         newIndex += 1;
       }
     }
-    var hue = hues[newIndex];
-    self["hueIndex"] = newIndex;
-    self["hue"] = hue;
-    self.callEventListeners("huechange", {"index": newIndex, "hue": hue});
+    changeHue(newIndex);
   }
 
 

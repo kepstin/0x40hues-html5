@@ -252,13 +252,16 @@ window.HuesUI = (function() {
        * are user-visible */
       var progress = this.setupProgress()
 
-      var respack = progress.then(Hues.loadDefaultRespack);
+      var respack = progress.then(function() {
+        return Hues.initialize(options)
+      });
       var canvas = progress.then(this.setupEffectCanvas.bind(this))
 
       var modernUI = new HuesUIModern(Hues)
 
       Promise.all([respack, canvas])
       .then(function() { modernUI.setupUI(this.root) }.bind(this))
+      .then(function() { window.HuesEffect.renderFrame(); })
       .then(this.fadeoutProgress.bind(this))
       .then(this.setupKeyHandlers.bind(this))
       .then(function() { if (options.autoPlay) { return Hues.playSong() } })

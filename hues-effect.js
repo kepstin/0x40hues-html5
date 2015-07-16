@@ -1025,6 +1025,9 @@ window.HuesEffect = (function() {
   };
   return {
     setup: self.setup,
-    setupComplete: self.setupComplete
+    setupComplete: self.setupComplete,
+    renderFrame: function() {
+      self.frameCallback(0);
+    }
   };
 })();
