@@ -17,7 +17,7 @@
   color: black;
 }
 
-.hues-progress-container, .hues-progress-container-visible {
+.hues-progress-container, .hues-progress-container-visible, .hues-progress-container-hidden {
   position: absolute;
   z-index: 1;
   display: block;
@@ -33,6 +33,9 @@
 }
 .hues-progress-container-visible {
   opacity: 1;
+}
+.hues-progress-container-hidden {
+  display: none;
 }
 .hues-error {
   display: none;

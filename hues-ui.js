@@ -88,6 +88,7 @@ window.HuesUI = (function() {
       return new Promise(function(resolve, reject) {
         self.progressContainer.className = "hues-progress-container"
         window.setTimeout(function() {
+          self.progressContainer.className = "hues-progress-container-hidden"
           resolve()
         }, 500)
       })
