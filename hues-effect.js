@@ -263,20 +263,9 @@ window.HuesEffect = (function() {
 
     /* Blur size, in pixels.
      *
-     * Recommended values are 0x10 (16) for low, 0x20 (32) for medium, 0x40 (64)
-     * for high. Setting this to 0 disables blur.
+     * Default, to match flash, is 128. Setting this to 0 disables blur.
      */
-    blurAmount: 0x20,
-
-    /* Blur decay time, in seconds
-     *
-     * TODO: Figure out the correct values to use here
-     * Currently recommend 200ms for slow, 150 for medium, 100 for fast,
-     * 50 for faster!
-     * Don't set this to 0; use blurAmount to disable blur.
-     */
-    blurDecay: 0.100,
-    //blurDecay: 0.5,
+    blurAmount: 0x80,
 
     /* Internal state */
 
@@ -698,10 +687,13 @@ window.HuesEffect = (function() {
         return;
       }
 
-      /* Animation termination condition */
+      /* In the flash, the blur decays by half every frame.
+       * I've turned that into a continuous function, assuming 60fps. */
       var startTime = self.blurStartTime;
-      var duration = self.blurDecay;
-      if (time > startTime + duration) {
+      var radius = self.blurAmount * Math.pow(2, -(time - startTime) * 60);
+
+      /* Termination condition */
+      if (radius < 0.5) {
         self.blurActive = false;
         self.blurX = 0;
         self.blurY = 0;
@@ -709,16 +701,14 @@ window.HuesEffect = (function() {
         return;
       }
 
-      var amount = 1.0 - (time - startTime) / duration;
-      var radius = self.blurAmount;
       var direction = self.blurDirection;
       var canvas = self.gl.canvas;
       var image = self.image;
       if (direction == 0) {
         self.blurX = 0;
-        self.blurY = (amount * radius) / image.scaledHeight;
+        self.blurY = radius / image.scaledHeight;
       } else {
-        self.blurX = (amount * radius) / image.scaledWidth;
+        self.blurX = radius / image.scaledWidth;
         self.blurY = 0;
       }
       self.renderNeeded = true;
