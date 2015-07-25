@@ -112,13 +112,13 @@ window.HuesUI = (function() {
       return Promise.resolve()
     }
 
-    Self.prototype.setupEffectCanvas = function() {
+    Self.prototype.setupEffectCanvas = function(options) {
       var canvas = this.root.ownerDocument.createElement("canvas")
       canvas.className = "hues-canvas"
       this.root.appendChild(canvas)
       this.canvas = canvas
 
-      return window.HuesEffect.setup(window.Hues, canvas)
+      return window.HuesEffect.setup(window.Hues, canvas, options)
     }
 
     Self.prototype.setupKeyHandlers = function() {
@@ -255,8 +255,10 @@ window.HuesUI = (function() {
 
       var respack = progress.then(function() {
         return Hues.initialize(options)
-      });
-      var canvas = progress.then(this.setupEffectCanvas.bind(this))
+      })
+      var canvas = progress.then(function () {
+        this.setupEffectCanvas(options)
+      }.bind(this))
 
       var modernUI = new HuesUIModern(Hues)
 

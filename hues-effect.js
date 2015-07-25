@@ -289,6 +289,12 @@ window.HuesEffect = (function() {
      */
     blurAmount: 0x80,
 
+    /* Whether to enable trippy mode.
+     *
+     * Why would you want this? Disabled by default.
+     */
+    circles: false,
+
     /* Internal state */
 
     /* The Hues object that handles the music syncing and effect parsing */
@@ -983,7 +989,12 @@ window.HuesEffect = (function() {
           throw new Error("Unsupported blend mode: " + self.blendMode);
         }
 
-        var colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
+        var colorSource;
+        if (self.circles) {
+          colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
+        } else {
+          colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE;
+        }
 
         /* Compile the "noblur" composite shader
          * When no blur is active, saves a whole bunch of texture lookups. */
@@ -1074,7 +1085,10 @@ window.HuesEffect = (function() {
     },
 
     setupPromise: null,
-    setup: function(hues, canvas) {
+    setup: function(hues, canvas, options) {
+      if (options.trippyMode === true) {
+        self.circles = true;
+      }
       self.hues = hues;
       var setupPromise = self.getWebglContext(canvas)
         .then(self.compileShader)
