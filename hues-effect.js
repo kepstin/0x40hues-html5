@@ -87,8 +87,7 @@ window.HuesEffect = (function() {
   var COMPOSITE_FRAGMENT_SOURCE_HEADER =
     "precision mediump float;\n" +
     "uniform float u_blackout;\n" +
-    "uniform sampler2D u_image;\n" +
-    "uniform vec3 u_hue;\n";
+    "uniform sampler2D u_image;\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOBLUR =
     "varying vec2 v_imageSample;\n" +
     "vec4 blur() {\n" +
@@ -185,14 +184,36 @@ window.HuesEffect = (function() {
     "  color += texture2D(u_image, v_blurSample[26]) * 0.001390;\n" +
     "  return color;\n" +
     "}\n";
+  var COMPOSITE_FRAGMENT_SOURCE_HUE =
+    "uniform vec3 u_hue;\n" +
+    "vec3 hue(void) {\n" +
+    "  return u_hue;\n" +
+    "}\n";
+  var COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES =
+    "uniform vec3 u_hue;\n" +
+    "uniform vec2 u_circleCenter;\n" +
+    "uniform float u_circleOutRadiusSq;\n" +
+    "uniform float u_circleInRadiusSq;\n" +
+    "vec3 hue(void) {\n" +
+    "  vec2 pos = gl_FragCoord.xy - u_circleCenter;\n" +
+    "  float radiusSq = dot(pos, pos);\n" +
+    "  vec3 c = vec3(1.0) - u_hue;\n" +
+    "  if (radiusSq < u_circleOutRadiusSq) {\n" +
+    "    c = vec3(1.0) - c;\n" +
+    "  }\n" +
+    "  if (radiusSq < u_circleInRadiusSq) {\n" +
+    "    c = vec3(1.0) - c;\n" +
+    "  }\n" +
+    "  return c;\n" +
+    "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLEND_PLAIN =
-    "vec4 blend(vec4 sample) {\n" +
-    "  return vec4(sample.rgb + u_hue * (1.0 - sample.a), 1.0);\n" +
+    "vec4 blend(vec4 sample, vec3 color) {\n" +
+    "  return vec4(sample.rgb + color * (1.0 - sample.a), 1.0);\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLEND_ALPHA =
-    "vec4 blend(vec4 sample) {\n" +
+    "vec4 blend(vec4 sample, vec3 color) {\n" +
     "  sample *= 0.7;\n" +
-    "  return vec4(sample.rgb + u_hue * (1.0 - sample.a), 1.0);\n" +
+    "  return vec4(sample.rgb + color * (1.0 - sample.a), 1.0);\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT =
     "float overlay(float a, float b) {\n" +
@@ -206,11 +227,11 @@ window.HuesEffect = (function() {
     "  return vec3(\n" +
     "    overlay(a.r, b.r), overlay(a.g, b.g), overlay(a.b, b.b));\n" +
     "}\n" +
-    "vec4 blend(vec4 sample) {\n" +
+    "vec4 blend(vec4 sample, vec3 color) {\n" +
     "  // First alpha blend the image onto solid white\n" +
     "  sample = vec4(sample.rgb + vec3(1.0) * (1.0 - sample.a), 1.0);\n" +
     "  // Then calculate the hard light result\n" +
-    "  vec3 lit = overlay(u_hue, vec3(sample));\n" +
+    "  vec3 lit = overlay(color, vec3(sample));\n" +
     "  // Then mix the two; 70% hard light\n" +
     "  return vec4(mix(vec3(sample), lit, 0.7), 1.0);\n" +
     "}\n";
@@ -221,7 +242,8 @@ window.HuesEffect = (function() {
     "}\n" +
     "void main() {\n" +
     "  vec4 blurSample = blur();\n" +
-    "  vec4 blendSample = blend(blurSample);\n" +
+    "  vec3 c = hue();\n" +
+    "  vec4 blendSample = blend(blurSample, c);\n" +
     "  vec4 blackoutSample = blackout(blendSample);\n" +
     "  gl_FragColor = blackoutSample;\n" +
     "}\n";
@@ -341,6 +363,12 @@ window.HuesEffect = (function() {
     shortBlackoutDuration: 0,
     blackoutStartTime: 0,
     blackout: 0.0,
+
+    /* Circles */
+    circleOutStartTime: 0,
+    circleOutRadius: 0,
+    circleInStartTime: 0,
+    circleInRadius: 0,
 
     /* Loading callbacks */
 
@@ -463,12 +491,20 @@ window.HuesEffect = (function() {
       self.blurActive = true;
       self.blurDirection = 0;
       self.blurStartTime = startTime;
+
+      /* TODO should this be separated? */
+      self.circleOutActive = true;
+      self.circleOutStartTime = startTime;
     },
 
     horizontalBlurEffectCallback: function(startTime) {
       self.blurActive = true;
       self.blurDirection = 1;
       self.blurStartTime = startTime;
+
+      /* TODO should this be separated? */
+      self.circleInActive = true;
+      self.circleInStartTime = startTime;
     },
 
     blackoutEffectCallback: function(blackoutActive, beatTime) {
@@ -746,11 +782,35 @@ window.HuesEffect = (function() {
       }
     },
 
+    circlesUpdate: function(time) {
+      var outStartTime = self.circleOutStartTime;
+      if (self.circleOutActive) {
+        if (time - outStartTime < 0.5) {
+          self.circleOutRadius = (time - outStartTime) / 0.5;
+        } else {
+          self.circleOutRadius = 1;
+          self.circleOutActive = false;
+        }
+        self.renderNeeded = true;
+      }
+      if (self.circleInActive) {
+        var inStartTime = self.circleInStartTime;
+        if (time - inStartTime < 0.5) {
+          self.circleInRadius = 1 - (time - inStartTime) / 0.5;
+        } else {
+          self.circleInRadius = 0;
+          self.circleInActive = false;
+        }
+        self.renderNeeded = true;
+      }
+    },
+
     /* Perform any per-frame calculations needed for effect animations */
     frameCallback: function(time) {
       self.hueUpdate(time);
       self.blurUpdate(time);
       self.blackoutUpdate(time);
+      self.circlesUpdate(time);
       self.imageAnimationUpdate(time);
       self.canvasSizeUpdate();
 
@@ -806,6 +866,17 @@ window.HuesEffect = (function() {
       var uBlackoutLoc = gl.getUniformLocation(shader, "u_blackout");
       gl.uniform1f(uBlackoutLoc, self.blackout);
 
+      /* Circles */
+      var uCircleCenter = gl.getUniformLocation(shader, "u_circleCenter");
+      gl.uniform2f(uCircleCenter, gl.drawingBufferWidth / 2, gl.drawingBufferHeight / 2);
+      var maxRadiusSq =
+        (gl.drawingBufferWidth / 2) * (gl.drawingBufferWidth / 2) +
+        (gl.drawingBufferHeight / 2) * (gl.drawingBufferHeight / 2);
+      var uCircleInRadiusSq = gl.getUniformLocation(shader, "u_circleInRadiusSq");
+      gl.uniform1f(uCircleInRadiusSq, self.circleInRadius * self.circleInRadius * maxRadiusSq);
+      var uCircleOutRadiusSq = gl.getUniformLocation(shader, "u_circleOutRadiusSq");
+      gl.uniform1f(uCircleOutRadiusSq, self.circleOutRadius * self.circleOutRadius * maxRadiusSq);
+
       /* Hue */
       var uHueLoc = gl.getUniformLocation(shader, "u_hue");
       gl.uniform3fv(uHueLoc, self.hue);
@@ -860,6 +931,7 @@ window.HuesEffect = (function() {
       gl.compileShader(fragmentShader);
       if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
         console.log("Fragment shader compile failure:");
+	console.log(fragmentShaderSource);
         console.log(gl.getShaderInfoLog(fragmentShader));
         throw new Error("Could not compile fragment shader");
       }
@@ -911,13 +983,15 @@ window.HuesEffect = (function() {
           throw new Error("Unsupported blend mode: " + self.blendMode);
         }
 
+        var colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
+
         /* Compile the "noblur" composite shader
          * When no blur is active, saves a whole bunch of texture lookups. */
         vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
           COMPOSITE_VERTEX_SOURCE_NOBLUR + COMPOSITE_VERTEX_SOURCE_FOOTER;
         fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
           COMPOSITE_FRAGMENT_SOURCE_NOBLUR + fragmentBlendSource +
-          COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
         self.compositeNoblurShader = self.compileOneShader(
             vertexShaderSource, fragmentShaderSource);
 
@@ -929,19 +1003,19 @@ window.HuesEffect = (function() {
             COMPOSITE_VERTEX_SOURCE_BLUR_V27 + COMPOSITE_VERTEX_SOURCE_FOOTER;
           fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
             COMPOSITE_FRAGMENT_SOURCE_BLUR_V27 + fragmentBlendSource +
-            COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+	    colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
 	} else if (varyings >= 15) {
           vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
             COMPOSITE_VERTEX_SOURCE_BLUR_V15 + COMPOSITE_VERTEX_SOURCE_FOOTER;
           fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
             COMPOSITE_FRAGMENT_SOURCE_BLUR_V15 + fragmentBlendSource +
-            COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+            colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
         } else if (varyings >= 9) {
           vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
             COMPOSITE_VERTEX_SOURCE_BLUR_V9 + COMPOSITE_VERTEX_SOURCE_FOOTER;
           fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
             COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 + fragmentBlendSource +
-            COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+            colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
         }
 
         if (varyings >= 9) {
