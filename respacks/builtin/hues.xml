@@ -1,8 +1,8 @@
 <hues>
   <!-- List of hues corresponding to "default" colorset in the flash. -->
   <!-- These colours are a 4x4x4 (=0x40...) color cube, probably generated
-       programatically in the original.
-       The names appear to be unique to this color list, however. -->
+       programatically in the original. The names were chosen by
+       Anonymous D for the 0x40 hues of megumi edit. -->
   <hue name="Black">#000000</hue>
   <hue name="Brick">#550000</hue>
   <hue name="Crimson">#aa0000</hue>
