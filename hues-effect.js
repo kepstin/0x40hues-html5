@@ -283,15 +283,21 @@ window.HuesEffect = (function() {
      */
     blendMode: 2,
 
-    /* Blur size, in pixels.
+    /* Blur amount.
      *
-     * Default, to match flash, is 128. Setting this to 0 disables blur.
+     * This is a scale value, applied to the initial blur size.
+     *
+     * To match the flash, use one of the following values:
+     * low: 0.5
+     * medium: 1.0 (default)
+     * high: 4.0
      */
-    blurAmount: 0x80,
+    blurAmount: 1.0,
 
     /* Blur decay.
      *
      * This is the base of the power function used to calculate blur decay.
+     *
      * To match the flash, use one of the following values:
      * low: 1.3
      * medium: 1.6
@@ -743,7 +749,7 @@ window.HuesEffect = (function() {
       /* In the flash, the blur decays by a multiplier every frame.
        * I've turned that into a continuous function, assuming 60fps. */
       var startTime = self.blurStartTime;
-      var radius = self.blurAmount * Math.pow(
+      var radius = 96 * self.blurAmount / self.blurDecay * Math.pow(
           self.blurDecay, -(time - startTime) * 60);
 
       /* Termination condition */
