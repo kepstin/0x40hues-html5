@@ -236,6 +236,17 @@ window.HuesEffect = (function() {
     "  return vec4(mix(vec3(sample), lit, 0.7), 1.0);\n" +
     "}\n";
 
+  var COMPOSITE_FRAGMENT_SOURCE_NOVIGNETTE =
+    "vec4 vignette(vec4 sample) {\n" +
+    "  return sample;\n" +
+    "}\n";
+  var COMPOSITE_FRAGMENT_SOURCE_VIGNETTE =
+    "uniform sampler2D u_vignetteImage;\n" +
+    "varying vec2 v_vignetteSample;\n" +
+    "vec4 vignette(vec4 sample) {\n" +
+    "  return sample * texture2D(u_vignetteImage, v_vignetteSample);\n" +
+    "}\n";
+
   var COMPOSITE_FRAGMENT_SOURCE_FOOTER =
     "vec4 blackout(vec4 sample) {\n" +
     "  return mix(sample, vec4(0.0, 0.0, 0.0, 1.0), u_blackout);\n" +
@@ -749,8 +760,8 @@ window.HuesEffect = (function() {
       /* In the flash, the blur decays by a multiplier every frame.
        * I've turned that into a continuous function, assuming 60fps. */
       var startTime = self.blurStartTime;
-      var radius = 96 * self.blurAmount / self.blurDecay * Math.pow(
-          self.blurDecay, -(time - startTime) * 60);
+      var radius = 96 * self.blurAmount * Math.pow(
+          self.blurDecay, -(time - startTime) * 60 - 1);
 
       /* Termination condition */
       if (radius < 0.5) {
