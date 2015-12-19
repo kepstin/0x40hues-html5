@@ -289,6 +289,17 @@ window.HuesEffect = (function() {
      */
     blurAmount: 0x80,
 
+    /* Blur decay.
+     *
+     * This is the base of the power function used to calculate blur decay.
+     * To match the flash, use one of the following values:
+     * low: 1.3
+     * medium: 1.6
+     * high: 2.0 (default)
+     * vhigh: 2.6
+     */
+    blurDecay: 2.0,
+
     /* Whether to enable trippy mode.
      *
      * Why would you want this? Disabled by default.
@@ -729,10 +740,11 @@ window.HuesEffect = (function() {
         return;
       }
 
-      /* In the flash, the blur decays by half every frame.
+      /* In the flash, the blur decays by a multiplier every frame.
        * I've turned that into a continuous function, assuming 60fps. */
       var startTime = self.blurStartTime;
-      var radius = self.blurAmount * Math.pow(2, -(time - startTime) * 60);
+      var radius = self.blurAmount * Math.pow(
+          self.blurDecay, -(time - startTime) * 60);
 
       /* Termination condition */
       if (radius < 0.5) {
