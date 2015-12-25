@@ -73,6 +73,9 @@
     /* The beat string, including the current beat */
     beatString: "",
 
+    /* Current state of the invert effect */
+    inverted: false,
+
     /* Saved promises that can be used to hook into various loading states. */
     setupPromise: null,
 
@@ -243,6 +246,18 @@
        * endHue: The hue at the end of the fade
        */
       fadehueeffect: [],
+
+      /* callback inverteffect(beatTime, inverted)
+       * Called when the state of the invert effect has changed
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback. It may also be called on song change to
+       * reset the inverted state.
+       *
+       * beatTime: The timestamp of the beat the the invert changed on
+       * inverted: A boolean indicating whether the screen is currently
+       *   inverted (true) or normal (false)
+       */
+      inverteffect: [],
 
       /* callback beat(beatInfo)
        * Called when the beat has changed, after all of the callbacks to update
@@ -1543,6 +1558,9 @@
       self.callEventListeners("songchange",
           song, loopStart, buildupStart, beatDuration);
       self.callEventListeners("imagechange", self.image, audioCtx.currentTime);
+      self.inverted = false;
+      self.callEventListeners("inverteffect",
+          audioCtx.currenTime, self.inverted);
     }
 
     var suspend = Promise.resolve()
@@ -1665,6 +1683,10 @@
      * "=": Fade and change image
      *   Same as "~", but in addition the image is changed (at the start of the
      *   effect).
+     * "i": Invert all colors
+     *   Toggles between normal and inverted states.
+     * "I": Invert & change image
+     *   Same as "i", bit in addition the image is changed.
      */
 
     /* Effects that cause vertical blur */
@@ -1687,7 +1709,7 @@
     if (self.autoMode == 2 && (
           current == "x" || current == "o" ||
           current == "-" || current == "|" || current == "*" ||
-          current == "=")) {
+          current == "=" || current == "I")) {
       randomImage();
     }
 
@@ -1713,6 +1735,12 @@
       var duration = (i + 1) * self.beatDuration;
       self.callEventListeners("fadehueeffect", beat.time, duration,
           prevHue, self.hue);
+    }
+
+    /* Invert toggle */
+    if (current == "i" || current == "I") {
+      self.inverted = !self.inverted;
+      self.callEventListeners("inverteffect", beat.time, self.inverted);
     }
 
   };

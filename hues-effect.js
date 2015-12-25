@@ -87,6 +87,7 @@ window.HuesEffect = (function() {
   var COMPOSITE_FRAGMENT_SOURCE_HEADER =
     "precision mediump float;\n" +
     "uniform float u_blackout;\n" +
+    "uniform float u_invert;\n" +
     "uniform sampler2D u_image;\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOBLUR =
     "varying vec2 v_imageSample;\n" +
@@ -251,12 +252,16 @@ window.HuesEffect = (function() {
     "vec4 blackout(vec4 sample) {\n" +
     "  return mix(sample, vec4(0.0, 0.0, 0.0, 1.0), u_blackout);\n" +
     "}\n" +
+    "vec4 invert(vec4 sample) {\n" +
+    "  return mix(sample, vec4(vec3(1.0) - vec3(sample), 1.0), u_invert);\n" +
+    "}\n" +
     "void main() {\n" +
     "  vec4 blurSample = blur();\n" +
     "  vec3 c = hue();\n" +
     "  vec4 blendSample = blend(blurSample, c);\n" +
     "  vec4 blackoutSample = blackout(blendSample);\n" +
-    "  gl_FragColor = blackoutSample;\n" +
+    "  vec4 invertSample = invert(blackoutSample);\n" +
+    "  gl_FragColor = invertSample;\n" +
     "}\n";
 
   var self = {
@@ -397,6 +402,9 @@ window.HuesEffect = (function() {
     shortBlackoutDuration: 0,
     blackoutStartTime: 0,
     blackout: 0.0,
+
+    /* Invert calculations */
+    invert: 0.0,
 
     /* Circles */
     circleOutStartTime: 0,
@@ -577,6 +585,15 @@ window.HuesEffect = (function() {
       self.hueFadeDuration = duration;
       self.hueFadeStartHue = prevHue.rgb;
       self.hueFadeEndHue = newHue.rgb;
+      self.renderNeeded = true;
+    },
+
+    invertEffectCallback: function(beatTime, inverted) {
+      if (inverted) {
+        self.invert = 1.0;
+      } else {
+        self.invert = 0.0;
+      }
       self.renderNeeded = true;
     },
 
@@ -916,6 +933,10 @@ window.HuesEffect = (function() {
       var uHueLoc = gl.getUniformLocation(shader, "u_hue");
       gl.uniform3fv(uHueLoc, self.hue);
 
+      /* Invert */
+      var uInvertLoc = gl.getUniformLocation(shader, "u_invert");
+      gl.uniform1f(uInvertLoc, self.invert);
+
       /* Do the actual draw command... */
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
@@ -1110,6 +1131,7 @@ window.HuesEffect = (function() {
       hues.addEventListener("shortblackouteffect",
           self.shortBlackoutEffectCallback);
       hues.addEventListener("fadehueeffect", self.fadeHueEffectCallback);
+      hues.addEventListener("inverteffect", self.invertEffectCallback);
       hues.addEventListener("frame", self.frameCallback);
     },
 
