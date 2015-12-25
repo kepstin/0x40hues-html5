@@ -1516,30 +1516,52 @@
       }
     }
 
-    var buildupStart = audioCtx.currentTime + 0.050;
-    var loopStart = buildupStart + buildupDuration;
-
     if (buildupSource) {
       currentBuildupSource = buildupSource;
       currentBuildupBuffer = buildupBuffer;
-      buildupSource.start(buildupStart);
     }
     currentLoopSource = loopSource;
     currentLoopBuffer = loopBuffer;
-    loopSource.start(loopStart);
 
-    currentBuildupStartTime = buildupStart;
-    currentLoopStartTime = loopStart;
+    var loopStart;
+    var buildupStart;
 
-    self.updateBeatString();
+    var startPlayback = function() {
+      buildupStart = audioCtx.currentTime;
+      loopStart = buildupStart + buildupDuration;
+      if (buildupSource) {
+        buildupSource.start(buildupStart);
+      }
+      loopSource.start(loopStart);
 
-    startBeatAnalysis();
+      currentBuildupStartTime = buildupStart;
+      currentLoopStartTime = loopStart;
 
-    self.callEventListeners("songchange",
-	song, loopStart, buildupStart, beatDuration);
-    self.callEventListeners("imagechange", self.image, audioCtx.currentTime);
+      self.updateBeatString();
+      startBeatAnalysis();
 
-    return Promise.resolve(song);
+      self.callEventListeners("songchange",
+          song, loopStart, buildupStart, beatDuration);
+      self.callEventListeners("imagechange", self.image, audioCtx.currentTime);
+    }
+
+    var suspend = Promise.resolve()
+    if (audioCtx.suspend && audioCtx.resume) {
+      suspend = audioCtx.suspend();
+    }
+
+    var playback = suspend.then(startPlayback);
+
+    var resume;
+    if (audioCtx.suspend && audioCtx.resume) {
+      resume = playback.then(function() {return audioCtx.resume()});
+    } else {
+      resume = playback;
+    }
+
+    return resume.then(function() {
+      return song;
+    });
   };
   Hues["changeSong"] = changeSong;
 
