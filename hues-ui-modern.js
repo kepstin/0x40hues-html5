@@ -285,9 +285,20 @@ window.HuesUIModern = (function() {
       controls.appendChild(rightBox)
     }
 
+    Self.prototype.handleInvertEffect = function(beatTime, inverted) {
+      if (inverted) {
+        this.root.classList.add('inverted');
+      } else {
+        this.root.classList.remove('inverted');
+      }
+    }
+
     Self.prototype.setupUI = function(root) {
       this.root = root
       var doc = root.ownerDocument
+
+      this.hues.addEventListener("inverteffect",
+          this.handleInvertEffect.bind(this));
 
       this.setupBeatBar()
       this.setupControls()

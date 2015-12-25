@@ -13,6 +13,9 @@
   border-width: 0 4px 4px;
   border-style: solid;
 }
+.inverted .hues-m-beatbar {
+  border-color: rgba(255,255,255,0.5);
+}
 
 .hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
   color: white;
@@ -23,6 +26,10 @@
   overflow: hidden;
   white-space: nowrap;
   border-radius: 10px;
+}
+.inverted .hues-m-beatleft, .inverted .hues-m-beatright, .inverted .hues-m-songtitle, .inverted .hues-m-imagename, .inverted .hues-m-huename {
+  color: black;
+  background: rgba(255,255,255,0.7);
 }
 
 .hues-m-huename {
@@ -64,6 +71,11 @@
   border-radius: 20px;
   text-align: center;
   box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+}
+.inverted .hues-m-beatcenter {
+  color: black;
+  background: rgb(175,175,175);
+  box-shadow: inset 0 0 12px rgba(255,255,255,0.5);
 }
 
 .hues-m-beatcenter > span {
@@ -125,6 +137,10 @@
   border-color: rgba(0,0,0,0.5);
   border-width: 4px 4px 0;
   border-style: solid;
+}
+.inverted .hues-m-controls {
+  color: rgba(0,0,0,0.7);
+  border-color: rgba(255,255,255,0.5);
 }
 
 .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
@@ -226,6 +242,9 @@ input[type=range]::-webkit-slider-runnable-track {
   border: none;
   border-radius: 0;
 }
+.inverted input[type=range]::-webkit-slider-runnable-track {
+  background: rgba(0,0,0,0.7);
+}
 
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -237,6 +256,9 @@ input[type=range]::-webkit-slider-thumb {
   background: rgb(255,255,255);
   margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
 }
+.inverted input[type=range]::-webkit-slider-thumb {
+  background: black;
+}
 
 input[type=range]::-moz-range-track {
   width: 100%;
@@ -244,6 +266,9 @@ input[type=range]::-moz-range-track {
   background: rgba(255,255,255,0.7);
   border: none;
   border-radius: 0;
+}
+.inverted input[type=range]::-moz-range-track {
+  background: rgba(0,0,0,0.7);
 }
 
 input[type=range]::-moz-range-thumb {
@@ -253,6 +278,9 @@ input[type=range]::-moz-range-thumb {
   width: 4px;
   border-radius: 0;
   background: rgb(255,255,255);
+}
+.inverted input[type=range]::-moz-range-thumb {
+  background: black;
 }
 
 input[type=range]::-ms-track {
@@ -267,8 +295,14 @@ input[type=range]::-ms-track {
 input[type=range]::-ms-fill-lower {
   background: rgba(255,255,255,0.7);
 }
+.inverted input[type=range]::-ms-fill-lower {
+  background: rgba(0,0,0,0.7);
+}
 input[type=range]::-ms-fill-upper {
   background: rgba(0,0,0,0.7);
+}
+.inverted input[type=range]::-ms-fill-upper {
+  background: rgba(255,255,255,0.7);
 }
 
 input[type=range]::-ms-thumb {
@@ -278,6 +312,9 @@ input[type=range]::-ms-thumb {
   width: 4px;
   border-radius: 0;
   background: rgb(255,255,255);
+}
+.inverted input[type=range]::-ms-thumb {
+  background: black;
 }
 
 @media (min-width: 768px) {
