@@ -778,7 +778,7 @@ window.HuesEffect = (function() {
        * I've turned that into a continuous function, assuming 60fps. */
       var startTime = self.blurStartTime;
       var radius = 96 * self.blurAmount * Math.pow(
-          self.blurDecay, -(time - startTime) * 60 - 1);
+          self.blurDecay, -(time - startTime) * 60);
 
       /* Termination condition */
       if (radius < 0.5) {
