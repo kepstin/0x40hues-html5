@@ -72,6 +72,10 @@
     beat: { time: 0, buildup: null, loop: null },
     /* The beat string, including the current beat */
     beatString: "",
+    /* The number of beats in the loop */
+    loopBeats: 0,
+    /* The number of beats in the build */
+    buildupBeats: 0,
 
     /* Current state of the invert effect */
     inverted: false,
@@ -1508,13 +1512,18 @@
     loopSource.loop = true;
     loopSource.connect(gainNode);
 
-    var beatDuration = loopDuration / song["rhythm"].length;
-    console.log("Beat duration is " + beatDuration);
-    console.log("Buildup duration is " + buildupDuration + " (" +
-      Math.round(buildupDuration / beatDuration) + " beats)")
+    var loopBeats = song["rhythm"].length;
+    self["loopBeats"] = loopBeats;
+    var beatDuration = loopDuration / loopBeats;
+    self["beatDuration"] = beatDuration;
+    var buildupBeats = Math.round(buildupDuration / beatDuration);
+    self["buildupBeats"] = buildupBeats;
+
     console.log("Loop duration is " + loopDuration + " (" +
       song["rhythm"].length + " beats)")
-    self["beatDuration"] = beatDuration;
+    console.log("Beat duration is " + beatDuration);
+    console.log("Buildup duration is " + buildupDuration + " (" +
+      buildupBeats + " beats)");
 
     if (buildupBuffer) {
       /* Songs that have buildups might be missing buildupRhythm, or
@@ -1757,11 +1766,17 @@
     var beat = { time: 0, buildup: null, loop: null };
     var beatDuration = self.beatDuration;
 
+    var loopCount = 0;
+
     if (typeof(song.buildupRhythm) !== "undefined" &&
         time < currentLoopStartTime) {
-      beat.buildup = Math.floor((time - currentBuildupStartTime) /
+      beat.buildup = self.buildupBeats +
+        Math.floor((time - currentLoopStartTime) /
           beatDuration);
+      if (beat.buildup < 0) { beat.buildup = null; }
     } else if (time >= currentLoopStartTime) {
+      loopCount = Math.floor((time - currentLoopStartTime)
+          / currentLoopBuffer.duration);
       beat.loop = Math.floor((time - currentLoopStartTime) %
           currentLoopBuffer.duration / beatDuration);
     }
@@ -1774,11 +1789,19 @@
       return;
     }
 
-    // For the moment, I'm using the time when I realize the beat changed
-    // as the time to use for effect start.
-    // TODO: Do I want to calculate the exact time that the beat would have
-    // started on instead?
-    beat.time = time;
+    //console.log("prev beat", prevBeat);
+
+    if (beat.buildup !== null) {
+      beat.time = currentLoopStartTime -
+        (self.buildupBeats - beat.buildup) * beatDuration;
+    }
+    if (beat.loop !== null) {
+      beat.time = currentLoopStartTime +
+        loopCount * currentLoopBuffer.duration +
+        beat.loop * beatDuration;
+    }
+
+    //console.log("curr beat", beat);
 
     self.beat = beat;
     self.updateBeatString();
