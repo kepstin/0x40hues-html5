@@ -1859,7 +1859,7 @@
   }
 
   var startBeatAnalysis = function() {
-    if (!self["beatAnalysisHandle"]) {
+    if (self["beatAnalysisHandle"] === null) {
       console.log("Starting beat analysis");
       self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
     }
@@ -1869,7 +1869,7 @@
     console.log("Stopping beat analysis");
     var handle = self["beatAnalysisHandle"];
     if (handle !== null) {
-      window.cancelAnimationFrame(self["beatAnalysisCallback"]);
+      window.cancelAnimationFrame(self["beatAnalysisHandle"]);
       self["beatAnalysisHandle"] = null;
     }
     var beat = { "buildup": null, "loop": null };
