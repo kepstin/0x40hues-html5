@@ -215,6 +215,29 @@ window.HuesUIModern = (function() {
       input.addEventListener("input", (function() {
         this.hues.setVolume(parseFloat(input.value))
       }).bind(this))
+      input.addEventListener("keyup", function(e) {
+        var key = e.key;
+        if (!key) {
+          switch (e.keyCode) {
+          case 37: key = 'ArrowLeft'; break
+          case 38: key = 'ArrowUp'; break
+          case 39: key = 'ArrowRight'; break
+          case 40: key = 'ArrowDown'; break
+          }
+        }
+        switch (key) {
+        case 'ArrowDown':
+        case 'Down':
+        case 'ArrowUp':
+        case 'Up':
+        case 'ArrowLeft':
+        case 'Left':
+        case 'ArrowRight':
+        case 'Right':
+          e.preventDefault();
+          break;
+        }
+      });
 
       this.updateVolume(this.hues.isMuted(), this.hues.getVolume())
       Hues.addEventListener("volumechange", this.updateVolume.bind(this))
