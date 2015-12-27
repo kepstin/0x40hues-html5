@@ -69,7 +69,7 @@
     /* Length of a beat in the current song */
     beatDuration: null,
     /* Information about the current beat */
-    beat: { time: 0, buildup: null, loop: null },
+    beat: { time: 0, buildup: null, loop: null, loopCount: 0 },
     /* The beat string, including the current beat */
     beatString: "",
     /* The number of beats in the loop */
@@ -1482,6 +1482,8 @@
     if (currentBuildupBuffer) {
       currentBuildupBuffer = null;
     }
+
+    stopBeatAnalysis();
   }
   Hues["stopSong"] = stopSong;
 
@@ -1762,53 +1764,95 @@
 
     var time = audioCtx.currentTime;
     var song = self.song;
-    var prevBeat = self.beat;
-    var beat = { time: 0, buildup: null, loop: null };
+    var beat = self.beat;
     var beatDuration = self.beatDuration;
 
     var loopCount = 0;
-
-    if (typeof(song.buildupRhythm) !== "undefined" &&
-        time < currentLoopStartTime) {
-      beat.buildup = self.buildupBeats +
-        Math.floor((time - currentLoopStartTime) /
-          beatDuration);
-      if (beat.buildup < 0) { beat.buildup = null; }
-    } else if (time >= currentLoopStartTime) {
+    if (time >= currentLoopStartTime) {
       loopCount = Math.floor((time - currentLoopStartTime)
           / currentLoopBuffer.duration);
-      beat.loop = Math.floor((time - currentLoopStartTime) %
-          currentLoopBuffer.duration / beatDuration);
     }
 
-    // If we're still in the same beat, bail out early.
-    if ((beat.buildup == prevBeat.buildup) &&
-        (beat.loop == prevBeat.loop)) {
-      self.callEventListeners("frame", time);
-      self.beatAnalysisHandle = window.requestAnimationFrame(beatAnalyze);
-      return;
+    if (beat.buildup === null && beat.loop === null) {
+      // We haven't played the first beat of the song yet, so initialize
+      // for looping...
+      if (typeof(song.buildupRhythm) !== "undefined") {
+        beat.buildup = -1;
+      } else {
+        beat.loop = -1;
+      }
+      beat.time = 0;
+      beat.loopCount = 0;
+
+      console.log("build start", currentBuildupStartTime, "loop start", currentLoopStartTime);
     }
 
-    //console.log("prev beat", prevBeat);
+    var doBeatActions = function() {
+      self.beat = beat;
+      self.updateBeatString();
+
+      doBeatEffect();
+
+      self.callEventListeners("beat", beat);
+    }
 
     if (beat.buildup !== null) {
-      beat.time = currentLoopStartTime -
-        (self.buildupBeats - beat.buildup) * beatDuration;
+      var nextBeat = { buildup: beat.buildup + 1, loop: null, loopCount: 0 };
+      nextBeat.time = currentLoopStartTime -
+        (self.buildupBeats - nextBeat.buildup) * beatDuration;
+
+      while (nextBeat.time < time && nextBeat.buildup < self.buildupBeats) {
+        beat = nextBeat;
+
+        doBeatActions();
+
+        nextBeat = {
+          buildup: beat.buildup + 1,
+          loop: null,
+          loopCount: beat.loopCount
+        };
+        nextBeat.time = currentLoopStartTime -
+          (self.buildupBeats - nextBeat.buildup) * beatDuration;
+      }
     }
+
+    if (beat.buildup == self.buildupBeats - 1) {
+      // Transition from buildup to loop
+      beat.buildup = null;
+      beat.loop = -1;
+    }
+
     if (beat.loop !== null) {
-      beat.time = currentLoopStartTime +
-        loopCount * currentLoopBuffer.duration +
-        beat.loop * beatDuration;
+      var nextBeat = {
+        buildup: null,
+        loop: beat.loop + 1,
+        loopCount: beat.loopCount
+      };
+      nextBeat.time = currentLoopStartTime +
+        nextBeat.loopCount * currentLoopBuffer.duration +
+        nextBeat.loop * beatDuration;
+
+      while (nextBeat.time < time) {
+        beat = nextBeat;
+
+        doBeatActions();
+
+        if (beat.loop == self.loopBeats - 1) {
+          beat.loop = -1;
+          beat.loopCount = beat.loopCount + 1;
+          console.log("loop count now", beat.loopCount);
+        }
+
+        nextBeat = {
+          buildup: null,
+          loop: beat.loop + 1,
+          loopCount: beat.loopCount
+        };
+        nextBeat.time = currentLoopStartTime +
+          nextBeat.loopCount * currentLoopBuffer.duration +
+          nextBeat.loop * beatDuration;
+      }
     }
-
-    //console.log("curr beat", beat);
-
-    self.beat = beat;
-    self.updateBeatString();
-
-    doBeatEffect();
-
-    self.callEventListeners("beat", beat);
 
     self.callEventListeners("frame", time);
     self["beatAnalysisHandle"] = window.requestAnimationFrame(beatAnalyze);
