@@ -5,11 +5,23 @@
   -webkit-font-smoothing: none;
   font-smooth: never;
   src: local("PetMe64Web");
-  src: local('Pet Me 64'), local('Pet Me 64'), url("PetMe64.woff") format('woff');
+  src: local('Pet Me 64'), local('Pet Me 64'), url("fonts/PetMe64.woff") format('woff');
 }
 
+@font-face {
+  font-family: 'HuesExtraControls';
+  src: url('fonts/HuesExtraControls.eot');
+  src: url('fonts/HuesExtraControls.eot#iefix') format('embedded-opentype'),
+       url('fonts/HuesExtraControls.ttf') format('truetype'),
+       url('fonts/HuesExtraControls.woff') format('woff'),
+       url('fonts/HuesExtraControls.svg#HuesExtraControls') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
 .hues-root {
-  font-family: 'PetMe64Web';
+  font-family: 'PetMe64Web', 'HuesExtraControls', monospace;
   font-size: 8px;
 }
 

@@ -224,6 +224,95 @@
   height: 12px;
 }
 
+.hues-m-songs-controls {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  bottom: 0;
+  width: 80px;
+}
+.hues-m-images-controls {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  bottom: 0;
+  width: 80px;
+}
+
+.hues-m-songs-select, .hues-m-images-select, .hues-m-button-left, .hues-m-button-right, .hues-m-button-mid {
+  display: block;
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  border: none;
+  color: inherit;
+  background: transparent;
+}
+.hues-m-songs-select, .hues-m-images-select {
+  width: 100%;
+  padding: 4px 0 1px;
+  text-align: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-size: 12px;
+  line-height: 12px;
+}
+.hues-m-button-left, .hues-m-button-right {
+  font-size: 12px;
+  line-height: 12px;
+  bottom: 5px;
+  width: 24px;
+  padding: 11px 0 9px;
+}
+.hues-m-button-left {
+  text-align: right;
+  left: 0;
+}
+.hues-m-button-right {
+  text-align: left;
+  right: 0;
+}
+.hues-m-button-mid {
+  font-size: 20px;
+  line-height: 24px;
+  bottom: 5px;
+  left: 24px;
+  width: 32px;
+  padding: 5px 0 3px;
+}
+
+.hues-m-button-bg {
+  position: absolute;
+  bottom: 5px;
+  left: 8px;
+  right: 8px;
+  height: 32px;
+  opacity: 0.7;
+}
+.hues-m-button-sidebg {
+  position: absolute;
+  bottom: 8px;
+  top: 8px;
+  left: 1px;
+  right: 1px;
+  border-radius: 8px;
+  background: black;
+}
+.hues-m-button-midbg {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  border-radius: 16px;
+  background: black;
+}
+.inverted .hues-m-button-sidebg, .inverted .hues-m-button-midbg {
+  background: white;
+}
+
 /* Fun slider stuff! */
 
 input[type=range] {

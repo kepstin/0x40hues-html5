@@ -50,6 +50,8 @@ window.HuesUIModern = (function() {
       this.volInput = null
       this.volLabel = null
 
+      this.imagesMode = null
+
       this.queuedResizeImageName = null
       this.queuedResizeSongTitle = null
 
@@ -270,6 +272,123 @@ window.HuesUIModern = (function() {
       this.hues.addEventListener("beat", this.updateBeatBar.bind(this))
     }
 
+    Self.prototype.setupPlayControls = function(box) {
+      var doc = box.ownerDocument;
+
+      var songsBox = doc.createElement("div");
+      songsBox.className = "hues-m-songs-controls";
+      box.appendChild(songsBox);
+
+      var songsSelect = doc.createElement("button");
+      songsSelect.className = "hues-m-songs-select";
+      songsSelect.textContent = "SONGS";
+      songsBox.appendChild(songsSelect);
+
+      var songsButtonBg = doc.createElement("div");
+      songsButtonBg.className = "hues-m-button-bg";
+      songsBox.appendChild(songsButtonBg);
+      var songsButtonBgSide = doc.createElement("div");
+      songsButtonBgSide.className = "hues-m-button-sidebg";
+      songsButtonBg.appendChild(songsButtonBgSide);
+      var songsButtonBgMid = doc.createElement("div");
+      songsButtonBgMid.className = "hues-m-button-midbg";
+      songsButtonBg.appendChild(songsButtonBgMid);
+
+      var songsPrev = doc.createElement("button");
+      songsPrev.className = "hues-m-button-left";
+      songsPrev.textContent = "<";
+      songsPrev.title = "Previous Song";
+      songsPrev.addEventListener("click", (function() {
+        this.hues.prevSong();
+      }).bind(this));
+      songsBox.appendChild(songsPrev);
+
+      var songsNext = doc.createElement("button");
+      songsNext.className = "hues-m-button-right";
+      songsNext.textContent = ">";
+      songsNext.title = "Next Song";
+      songsNext.addEventListener("click", (function() {
+        this.hues.nextSong();
+      }).bind(this));
+      songsBox.appendChild(songsNext);
+
+      var songsRand = doc.createElement("button");
+      songsRand.className = "hues-m-button-mid";
+      songsRand.textContent = "🔀";
+      songsRand.title = "Random Song";
+      songsRand.addEventListener("click", (function() {
+        this.hues.randomSong();
+      }).bind(this));
+      songsBox.appendChild(songsRand);
+
+      var imagesBox = doc.createElement("div");
+      imagesBox.className = "hues-m-images-controls";
+      box.appendChild(imagesBox);
+
+      var imagesSelect = doc.createElement("button");
+      imagesSelect.className = "hues-m-images-select";
+      imagesSelect.textContent = "IMAGES";
+      imagesBox.appendChild(imagesSelect);
+
+      var imagesButtonBg = doc.createElement("div");
+      imagesButtonBg.className = "hues-m-button-bg";
+      imagesBox.appendChild(imagesButtonBg);
+      var imagesButtonBgSide = doc.createElement("div");
+      imagesButtonBgSide.className = "hues-m-button-sidebg";
+      imagesButtonBg.appendChild(imagesButtonBgSide);
+      var imagesButtonBgMid = doc.createElement("div");
+      imagesButtonBgMid.className = "hues-m-button-midbg";
+      imagesButtonBg.appendChild(imagesButtonBgMid);
+
+      var imagesPrev = doc.createElement("button");
+      imagesPrev.className = "hues-m-button-left";
+      imagesPrev.textContent = "<";
+      imagesPrev.title = "Previous Image";
+      imagesPrev.addEventListener("click", (function() {
+        this.hues.setAutoMode("normal");
+        this.hues.prevImage();
+      }).bind(this));
+      imagesBox.appendChild(imagesPrev);
+
+      var imagesNext = doc.createElement("button");
+      imagesNext.className = "hues-m-button-right";
+      imagesNext.textContent = ">";
+      imagesNext.title = "Next Image";
+      imagesNext.addEventListener("click", (function() {
+        this.hues.setAutoMode("normal");
+        this.hues.nextImage();
+      }).bind(this));
+      imagesBox.appendChild(imagesNext);
+
+      var imagesMode = doc.createElement("button");
+      imagesMode.className = "hues-m-button-mid";
+      imagesBox.appendChild(imagesMode);
+      this.imagesMode = imagesMode;
+      imagesMode.addEventListener("click", this.handleImageMode.bind(this));
+      this.hues.addEventListener("automodechange",
+          this.updateImageMode.bind(this));
+      this.updateImageMode(this.hues.getAutoMode());
+    }
+
+    Self.prototype.updateImageMode = function(autoMode) {
+      var imagesMode = this.imagesMode;
+      if (autoMode == "normal") {
+        imagesMode.textContent = "▶";
+        imagesMode.title = "Start Auto Mode";
+      } else {
+        imagesMode.textContent = "⏸";
+        imagesMode.title = "Pause Auto Mode";
+      }
+    }
+
+    Self.prototype.handleImageMode = function() {
+      if (this.hues.getAutoMode() == "normal") {
+        this.hues.setAutoMode("full auto");
+      } else {
+        this.hues.setAutoMode("normal");
+      }
+    }
+
     Self.prototype.setupControls = function() {
       var root = this.root
       var doc = root.ownerDocument
@@ -306,6 +425,8 @@ window.HuesUIModern = (function() {
       var rightBox = doc.createElement("div")
       rightBox.className = "hues-m-rightbox"
       controls.appendChild(rightBox)
+
+      this.setupPlayControls(rightBox)
     }
 
     Self.prototype.handleInvertEffect = function(beatTime, inverted) {
