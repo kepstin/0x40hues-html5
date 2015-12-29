@@ -249,6 +249,10 @@
   color: inherit;
   background: transparent;
 }
+.hues-m-songs-select:focus, .hues-m-images-select:focus, .hues-m-button-left:focus, .hues-m-button-right:focus, .hues-m-button-mid:focus {
+  color: white;
+  outline: none;
+}
 /*.hues-m-songs-select:hover, .hues-m-songs-select:active, .hues-m-images-select:hover, .hues-m-images-select:active,*/ .hues-m-button-left:hover, .hues-m-button-left:active, .hues-m-button-right:hover, .hues-m-button-right:active, .hues-m-button-mid:hover, .hues-m-button-mid:active {
   color: white;
 }
