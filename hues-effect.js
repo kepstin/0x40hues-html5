@@ -793,7 +793,7 @@ window.HuesEffect = (function() {
           self.blurDecay, -(time - startTime) * 60);
 
       /* Termination condition */
-      if (radius < 0.5) {
+      if (radius < 1) {
         self.blurActive = false;
         self.blurX = 0;
         self.blurY = 0;

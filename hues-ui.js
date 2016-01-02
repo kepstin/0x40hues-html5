@@ -121,6 +121,16 @@ window.HuesUI = (function() {
       return window.HuesEffect.setup(window.Hues, canvas, options)
     }
 
+    Self.prototype.setupEffectHandlers = function() {
+      Hues.addEventListener("inverteffect", function(beatTime, inverted) {
+        if (inverted) {
+          this.root.classList.add("inverted");
+        } else {
+          this.root.classList.remove("inverted");
+        }
+      });
+    }
+
     Self.prototype.setupKeyHandlers = function() {
       /* Ok, not technically a *key* handler, but still. */
       this.root.addEventListener("wheel", function(e) {
@@ -245,7 +255,7 @@ window.HuesUI = (function() {
       if (!this.root) {
         throw new Error("Cannot find requested root element " + selector)
       }
-      this.root.className += " hues-root"
+      this.root.classList.add("hues-root");
 
       this.setupError()
 
@@ -265,8 +275,9 @@ window.HuesUI = (function() {
       Promise.all([respack, canvas])
       .then(function() { modernUI.setupUI(this.root) }.bind(this))
       .then(function() { window.HuesEffect.renderFrame(); })
-      .then(this.fadeoutProgress.bind(this))
+      .then(this.setupEffectHandlers.bind(this))
       .then(this.setupKeyHandlers.bind(this))
+      .then(this.fadeoutProgress.bind(this))
       .then(function() { if (options.autoPlay) { return Hues.playSong() } })
       .catch(this.renderError.bind(this))
     }
