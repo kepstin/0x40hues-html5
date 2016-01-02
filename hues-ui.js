@@ -122,13 +122,13 @@ window.HuesUI = (function() {
     }
 
     Self.prototype.setupEffectHandlers = function() {
-      Hues.addEventListener("inverteffect", function(beatTime, inverted) {
+      Hues.addEventListener("inverteffect", (function(beatTime, inverted) {
         if (inverted) {
           this.root.classList.add("inverted");
         } else {
           this.root.classList.remove("inverted");
         }
-      });
+      }).bind(this));
     }
 
     Self.prototype.setupKeyHandlers = function() {
