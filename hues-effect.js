@@ -415,23 +415,29 @@ window.HuesEffect = (function() {
     /* Loading callbacks */
 
     imageLoadCallback: function(image, blob) {
-      var img = document.createElement("img");
-      img.addEventListener("load", function() {
-        var gl = self.gl;
-        var texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // TODO: allow switching between nearest and linear scaling?
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+      return new Promise(function(resolve, reject) {
+        var img = document.createElement("img");
+        img.addEventListener("load", function() {
+          var gl = self.gl;
+          var texture = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, texture);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          // TODO: allow switching between nearest and linear scaling?
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
 
-        image.texture = texture;
-        image.width = img.naturalWidth;
-        image.height = img.naturalHeight;
+          image.texture = texture;
+          image.width = img.naturalWidth;
+          image.height = img.naturalHeight;
+          resolve(image);
+        });
+        img.addEventListener("error", function(ev) {
+          reject(ev);
+        });
+        img.src = URL.createObjectURL(blob);
       });
-      img.src = URL.createObjectURL(blob);
     },
 
     imageFrameLoadCallback: function(image, frame, blob) {
@@ -439,23 +445,29 @@ window.HuesEffect = (function() {
         image.textures = [];
       }
 
-      var img = document.createElement("img");
-      img.addEventListener("load", function() {
-        var gl = self.gl;
-        var texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // TODO: allow switching between nearest and linear scaling?
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+      return new Promise(function(resolve, reject) {
+        var img = document.createElement("img");
+        img.addEventListener("load", function() {
+          var gl = self.gl;
+          var texture = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, texture);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          // TODO: allow switching between nearest and linear scaling?
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
 
-        image.textures[frame - 1] = texture;
-        image.width = img.naturalWidth;
-        image.height = img.naturalHeight;
+          image.textures[frame - 1] = texture;
+          image.width = img.naturalWidth;
+          image.height = img.naturalHeight;
+          resolve(image);
+        });
+        img.addEventListener("error", function(ev) {
+          reject(ev);
+        });
+        img.src = URL.createObjectURL(blob);
       });
-      img.src = URL.createObjectURL(blob);
     },
 
     /* Effect callbacks */

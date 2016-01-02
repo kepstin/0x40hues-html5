@@ -288,9 +288,9 @@
      */
     callEventListeners: function(ev) {
       var args = Array.prototype.slice.call(arguments, 1);
-      self.eventListeners[ev].forEach(function(callback) {
-        callback.apply(null, args);
-      });
+      return Promise.all(self.eventListeners[ev].map(function(callback) {
+        return callback.apply(null, args);
+      }));
     },
 
     /* User settings accessors */
@@ -1123,8 +1123,11 @@
       .then(function(blob) {
         image.frames = i;
         var next = loadRespackImageAnimationFrame(respack, image, i + 1);
-        self.callEventListeners("imageframeload", image, i, blob);
-        resolve(next);
+        Promise.resolve(self.callEventListeners("imageframeload", image, i, blob))
+        .then(function() {
+          resolve(next);
+        })
+        .catch(reject);
       })
       .catch(function(error) {
         if (error === 404) {
@@ -1154,14 +1157,18 @@
       .then(function(response) { return response.blob() })
       .then(function(blob) {
         image.frames = i;
-        self.callEventListeners("imageframeload", image, i, blob);
-        resolve();
+        Promise.resolve(self.callEventListeners("imageframeload", image, i, blob))
+        .then(function() {
+          resolve(image);
+        })
+        .catch(reject);
       })
       .catch(reject);
     });
   }
 
   var loadRespackImageAnimation = function(respack, image) {
+    console.log("Starting animation load for " + image.name);
     return new Promise(function(resolve, reject) {
       image.frames = parseInt(image.frames);
       if (isFinite(image.frames)) {
@@ -1177,20 +1184,23 @@
             .then(function() {
               self.callEventListeners("progress", 1, 0);
             })
+            .catch(function(er) {
+              console.log(err);
+              return Promise.reject(er);
+            })
           );
         }
 
-	resolve(Promise.all(promises)
-          .catch(function(error) {
-            if (error === 404) {
-              return Promise.reject(
-                  new Error("Some animation frames for " + image.name +
-                      " failed to load"));
-            } else {
-              return Promise.reject(error);
-            }
-          })
-        );
+	Promise.all(promises)
+        .then(resolve)
+        .catch(function(error) {
+          if (error === 404) {
+            resolve(new Error("Some animation frames for " + image.name +
+                    " failed to load"));
+          } else {
+            reject(error);
+          }
+        });
       } else {
         // Standard respack animations are a bit tricky, since the xml file
         // doesn't say how many frames there are. We have to fetch them until
@@ -1218,8 +1228,10 @@
       loadRespackImageFetch(respack["uri"] + "/Images/" + name + ".png")
       .then(function(response) { return response.blob() })
       .then(function(blob) {
-        self.callEventListeners("imageload", image, blob);
-        resolve(image);
+        Promise.resolve(self.callEventListeners("imageload", image, blob))
+        .then(function() {
+          resolve(image);
+        });
       })
       .catch(reject);
     });
