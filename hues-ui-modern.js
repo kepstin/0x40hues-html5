@@ -28,7 +28,8 @@ window.HuesUIModern = (function() {
     var Self = function(hues) {
       this.hues = hues;
 
-      this.root = null
+      this.root = null;
+      this.huesRoot = null;
 
       this.beatBar = null
       this.beatLeft = null
@@ -266,7 +267,7 @@ window.HuesUIModern = (function() {
       
       var beatCenter = doc.createElement("div")
       beatCenter.className = "hues-m-beatcenter"
-      root.appendChild(beatCenter)
+      beatBar.appendChild(beatCenter)
       this.beatCenter = beatCenter
 
       this.hues.addEventListener("beat", this.updateBeatBar.bind(this))
@@ -430,8 +431,14 @@ window.HuesUIModern = (function() {
     }
 
     Self.prototype.setupUI = function(root) {
-      this.root = root
-      var doc = root.ownerDocument
+      var doc = root.ownerDocument;
+
+      var uiRoot = doc.createElement("div");
+      uiRoot.className = "hues-m-root";
+      root.appendChild(uiRoot);
+
+      this.root = uiRoot;
+      this.huesRoot = root;
 
       this.setupBeatBar()
       this.setupControls()
