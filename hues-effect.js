@@ -787,12 +787,12 @@ window.HuesEffect = (function() {
       }
 
       /* In the flash, the blur decays by a multiplier every frame.
-       * I've turned that into a continuous function, assuming 30fps.
+       * I've turned that into a continuous function, assuming 45fps.
        * This originally used 60fps, but, well, good luck getting the flash
        * to blur at 60fps! */
       var startTime = self.blurStartTime;
       var radius = 96 * self.blurAmount * Math.pow(
-          self.blurDecay, -(time - startTime) * 30 + 1);
+          self.blurDecay, -(time - startTime) * 45 + 1);
 
       /* Termination condition */
       if (radius < 0.5) {
