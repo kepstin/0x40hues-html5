@@ -224,6 +224,20 @@
        */
       blackouteffect: [],
 
+      /* callback whiteouteffect(whiteoutActive, beatTime)
+       * Same as blackout, except white.
+       * Note that the whiteout is expected to share timers and state with
+       * blackout; in particular, doing a whiteout after blackout should
+       * not restart the fade but rather instantly switch colors.
+       * A whiteout will be cancelled by calling the blackouteffect with
+       * blackoutActive=false.
+       *
+       * whiteoutActive: boolean value indicating whether the blackout is
+       *   currently active.
+       * beatTime: The timestamp of the beat that the blackout occured on.
+       */
+      whiteouteffect: [],
+
       /* callback shortblackouteffect(beatTime, duration)
        * Called on the start of the short blackout "|" beat effect, with the
        * information required to time the short blackout correctly.
@@ -1665,7 +1679,7 @@
     }
 
     /* All non-null beat characters cancel blackout - except blackouts */
-    if (!(current == '+' || current == '|')) {
+    if (!(current == '+' || current == '|' || current == '¤')) {
       self.callEventListeners("blackouteffect", false, beat.time);
     }
 
@@ -1710,6 +1724,9 @@
      *   Toggles between normal and inverted states.
      * "I": Invert & change image
      *   Same as "i", bit in addition the image is changed.
+     * "¤": Whiteout (undocumented effect)
+     *   Same as +, but with white rather than black. All the timers, etc.,
+     *   are shared with blackout.
      */
 
     /* Effects that cause vertical blur */
@@ -1739,6 +1756,11 @@
     /* Standard blackout */
     if (current == "+") {
       self.callEventListeners("blackouteffect", true, beat.time);
+    }
+
+    /* Whiteout */
+    if (current == "¤") {
+      self.callEventListeners("whiteouteffect", true, beat.time);
     }
 
     /* Short blackout */

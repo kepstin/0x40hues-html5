@@ -87,6 +87,7 @@ window.HuesEffect = (function() {
   var COMPOSITE_FRAGMENT_SOURCE_HEADER =
     "precision mediump float;\n" +
     "uniform float u_blackout;\n" +
+    "uniform vec3 u_blackoutColor;\n" +
     "uniform float u_invert;\n" +
     "uniform sampler2D u_image;\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOBLUR =
@@ -250,7 +251,7 @@ window.HuesEffect = (function() {
 
   var COMPOSITE_FRAGMENT_SOURCE_FOOTER =
     "vec4 blackout(vec4 sample) {\n" +
-    "  return mix(sample, vec4(0.0, 0.0, 0.0, 1.0), u_blackout);\n" +
+    "  return mix(sample, vec4(u_blackoutColor, 1.0), u_blackout);\n" +
     "}\n" +
     "vec4 invert(vec4 sample) {\n" +
     "  return mix(sample, vec4(vec3(1.0) - vec3(sample), 1.0), u_invert);\n" +
@@ -402,6 +403,7 @@ window.HuesEffect = (function() {
     shortBlackoutDuration: 0,
     blackoutStartTime: 0,
     blackout: 0.0,
+    blackoutColor: [ 0.0, 0.0, 0.0 ],
 
     /* Invert calculations */
     invert: 0.0,
@@ -575,6 +577,13 @@ window.HuesEffect = (function() {
       }
       self.blackoutActive = blackoutActive;
       self.blackoutStartTime = beatTime;
+      self.blackoutColor = [ 0.0, 0.0, 0.0 ];
+    },
+
+    whiteoutEffectCallback: function(whiteoutActive, beatTime) {
+      /* Whiteout is literally blackout, except white. */
+      self.blackoutEffectCallback(whiteoutActive, beatTime);
+      self.blackoutColor = [ 1.0, 1.0, 1.0 ];
     },
 
     shortBlackoutEffectCallback: function(beatTime, duration) {
@@ -588,6 +597,7 @@ window.HuesEffect = (function() {
       self.blackoutActive = false;
       self.blackoutStartTime = beatTime;
       self.shortBlackoutDuration = duration;
+      self.blackoutColor = [ 0.0, 0.0, 0.0 ];
     },
 
     fadeHueEffectCallback: function(beatTime, duration, prevHue, newHue) {
@@ -931,6 +941,8 @@ window.HuesEffect = (function() {
       /* Blackout */
       var uBlackoutLoc = gl.getUniformLocation(shader, "u_blackout");
       gl.uniform1f(uBlackoutLoc, self.blackout);
+      var uBlackoutColorLoc = gl.getUniformLocation(shader, "u_blackoutColor");
+      gl.uniform3fv(uBlackoutColorLoc, self.blackoutColor);
 
       /* Circles */
       var uCircleCenter = gl.getUniformLocation(shader, "u_circleCenter");
@@ -1142,6 +1154,7 @@ window.HuesEffect = (function() {
       hues.addEventListener("horizontalblureffect",
           self.horizontalBlurEffectCallback);
       hues.addEventListener("blackouteffect", self.blackoutEffectCallback);
+      hues.addEventListener("whiteouteffect", self.whiteoutEffectCallback);
       hues.addEventListener("shortblackouteffect",
           self.shortBlackoutEffectCallback);
       hues.addEventListener("fadehueeffect", self.fadeHueEffectCallback);
