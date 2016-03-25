@@ -985,7 +985,8 @@ window.HuesEffect = (function() {
         var gl = canvas.getContext("webgl", webglOpts) ||
           canvas.getContext("experimental-webgl", webglOpts);
         if (!gl) {
-          return reject(Error("Unable to get a webgl canvas context"));
+          reject(new Error("Unable to get a webgl canvas context"));
+          return;
         }
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
 
@@ -994,7 +995,7 @@ window.HuesEffect = (function() {
 
         self.gl = gl;
 
-        return resolve();
+        resolve();
       });
     },
 
