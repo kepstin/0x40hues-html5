@@ -838,12 +838,13 @@ window.HuesEffect = (function() {
 
       var startTime = self.blackoutStartTime;
       if (self.blackoutFadeinActive) {
-        if (time - startTime > 0.040) {
+        /* The fadein nominally is 2.5 frames long; at 45fps that's 0.0556s */
+        if (time - startTime > 0.0556) {
           self.blackoutFadeinActive = false;
           self.blackout = 1.0;
           self.renderNeeded = true;
         } else {
-          self.blackout = (time - startTime) / 0.040;
+          self.blackout = (time - startTime) / 0.0556;
           self.renderNeeded = true;
         }
       }
