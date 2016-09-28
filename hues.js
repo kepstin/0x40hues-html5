@@ -37,6 +37,9 @@
      */
     autoMode: 2,
 
+    /* Whether to draw circles on horizontal/vertical blur */
+    trippyMode: false,
+
     /* All the respacks that are currently loaded
      * Respacks can contain hues, images, and songs. */
     respacks: {},
@@ -276,6 +279,16 @@
        *   inverted (true) or normal (false)
        */
       inverteffect: [],
+
+      /* callback circleeffect(beatTime, in)
+       * Called on the start of a circle effect
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback.
+       *
+       * beatTime: The timestamp of the beat that the circle started on
+       * in: Whether the circle is from outside in (true), or center out (false)
+       */
+      circleeffect: [],
 
       /* callback beat(beatInfo)
        * Called when the beat has changed, after all of the callbacks to update
@@ -744,6 +757,11 @@
     var autoMode = window.huesConfig["autoMode"];
     if (typeof(autoMode) !== 'undefined') {
       self.setAutoMode(autoMode);
+    }
+
+    var trippyMode = window.huesConfig["trippyMode"];
+    if (typeof(trippyMode) !== 'undefined') {
+      self.trippyMode = !!trippyMode;
     }
   })();
 
@@ -1727,6 +1745,8 @@
      * "¤": Whiteout (undocumented effect)
      *   Same as +, but with white rather than black. All the timers, etc.,
      *   are shared with blackout.
+     * ")": In circle (HTML hues extension)
+     * "(": Out circle (HTML hues extension)
      */
 
     /* Effects that cause vertical blur */
@@ -1786,6 +1806,18 @@
     if (current == "i" || current == "I") {
       self.inverted = !self.inverted;
       self.callEventListeners("inverteffect", beat.time, self.inverted);
+    }
+
+    /* Out circle */
+    if (current == "("
+        || (self.trippyMode && (current == "x" || current == "X"))) {
+      self.callEventListeners("circleeffect", beat.time, /*in=*/false);
+    }
+
+    /* In circle */
+    if (current == ")"
+        || (self.trippyMode && (current == "o" || current == "O"))) {
+      self.callEventListeners("circleeffect", beat.time, /*in=*/true);
     }
 
   };

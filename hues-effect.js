@@ -323,12 +323,6 @@ window.HuesEffect = (function() {
      */
     blurDecay: 2.0,
 
-    /* Whether to enable trippy mode.
-     *
-     * Why would you want this? Disabled by default.
-     */
-    circles: false,
-
     /* Internal state */
 
     /* The Hues object that handles the music syncing and effect parsing */
@@ -547,20 +541,12 @@ window.HuesEffect = (function() {
       self.blurActive = true;
       self.blurDirection = 0;
       self.blurStartTime = startTime;
-
-      /* TODO should this be separated? */
-      self.circleOutActive = true;
-      self.circleOutStartTime = startTime;
     },
 
     horizontalBlurEffectCallback: function(startTime) {
       self.blurActive = true;
       self.blurDirection = 1;
       self.blurStartTime = startTime;
-
-      /* TODO should this be separated? */
-      self.circleInActive = true;
-      self.circleInStartTime = startTime;
     },
 
     blackoutEffectCallback: function(blackoutActive, beatTime) {
@@ -617,6 +603,16 @@ window.HuesEffect = (function() {
         self.invert = 0.0;
       }
       self.renderNeeded = true;
+    },
+
+    circleEffectCallback: function(startTime, inCircle) {
+      if (inCircle) {
+        self.circleInActive = true;
+        self.circleInStartTime = startTime;
+      } else {
+        self.circleOutActive = true;
+        self.circleOutStartTime = startTime;
+      }
     },
 
     /* Effect animations */
@@ -1161,14 +1157,12 @@ window.HuesEffect = (function() {
           self.shortBlackoutEffectCallback);
       hues.addEventListener("fadehueeffect", self.fadeHueEffectCallback);
       hues.addEventListener("inverteffect", self.invertEffectCallback);
+      hues.addEventListener("circleeffect", self.circleEffectCallback);
       hues.addEventListener("frame", self.frameCallback);
     },
 
     setupPromise: null,
     setup: function(hues, canvas, options) {
-      if (options.trippyMode === true) {
-        self.circles = true;
-      }
       self.hues = hues;
       var setupPromise = self.getWebglContext(canvas)
         .then(self.compileShader)
