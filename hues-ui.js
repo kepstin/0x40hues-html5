@@ -267,7 +267,7 @@ window.HuesUI = (function() {
         return Hues.initialize(options)
       })
       var canvas = progress.then(function () {
-        this.setupEffectCanvas(options)
+        return this.setupEffectCanvas(options)
       }.bind(this))
 
       var modernUI = new HuesUIModern(Hues)
