@@ -334,6 +334,9 @@ window.HuesEffect = (function() {
     /* Canvas saved width and height, to detect resizes */
     canvasClientWidth: 0,
     canvasClientHeight: 0,
+    /* New canvas width and height, from resize callback */
+    newCanvasClientWidth: 0,
+    newCanvasClientHeight: 0,
 
     /* The compiled shader programs */
     resampleShader: null,
@@ -647,18 +650,26 @@ window.HuesEffect = (function() {
       self.renderNeeded = true;
     },
 
+    /* Check the new canvas size (run early prior to reflow) */
+    canvasSizeInspect: function() {
+      var gl = self.gl;
+      var canvas = gl.canvas;
+      self.newCanvasClientWidth = canvas.clientWidth;
+      self.newCanvasClientHeight = canvas.clientHeight;
+    },
+
     /* This checks if the canvas size has changed, which means a redraw */
     canvasSizeUpdate: function() {
       var gl = self.gl;
       var canvas = gl.canvas;
-      if (self.canvasClientWidth != canvas.clientWidth ||
-          self.canvasClientHeight != canvas.clientHeight) {
-        console.log("Updating canvas size");
+      if (self.canvasClientWidth != self.newCanvasClientWidth ||
+          self.canvasClientHeight != self.newCanvasClientHeight) {
 	var ratio = window.devicePixelRatio || 1;
-        canvas.width = Math.round(canvas.clientWidth * ratio);
-        canvas.height = Math.round(canvas.clientHeight * ratio);
-	self.canvasClientWidth = canvas.clientWidth;
-	self.canvasClientHeight = canvas.clientHeight;
+        console.log("Updating canvas size: " + self.canvasClientWidth + "x" + self.canvasClientHeight + " to " + self.newCanvasClientWidth + "x" + self.newCanvasClientHeight + " (" + ratio + " dev px per px)");
+        canvas.width = Math.round(self.newCanvasClientWidth * ratio);
+        canvas.height = Math.round(self.newCanvasClientHeight * ratio);
+        self.canvasClientWidth = self.newCanvasClientWidth;
+        self.canvasClientHeight = self.newCanvasClientHeight;
 
         self.imageSizeUpdate();
         self.renderNeeded = true;
@@ -876,6 +887,11 @@ window.HuesEffect = (function() {
         }
         self.renderNeeded = true;
       }
+    },
+
+    /* Update the saved canvas size on resize */
+    resizeCallback: function() {
+      self.canvasSizeInspect();
     },
 
     /* Perform any per-frame calculations needed for effect animations */
@@ -1179,7 +1195,11 @@ window.HuesEffect = (function() {
     setup: self.setup,
     setupComplete: self.setupComplete,
     renderFrame: function() {
+      self.resizeCallback();
       self.frameCallback(0);
+    },
+    updateResize: function() {
+      self.resizeCallback();
     }
   };
 })();

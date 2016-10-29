@@ -118,7 +118,14 @@ window.HuesUI = (function() {
       this.root.appendChild(canvas)
       this.canvas = canvas
 
-      return window.HuesEffect.setup(window.Hues, canvas, options)
+      var effectSetup = window.HuesEffect.setup(window.Hues, canvas, options);
+      var effectHandlers = effectSetup.then(function() {
+        window.addEventListener("resize", function() {
+          window.HuesEffect.updateResize();
+        }.bind(this));
+      });
+
+      return effectHandlers;
     }
 
     Self.prototype.setupEffectHandlers = function() {

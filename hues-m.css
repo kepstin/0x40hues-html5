@@ -20,6 +20,7 @@
   border-color: rgba(0,0,0,0.5);
   border-width: 0 4px 4px;
   border-style: solid;
+  transform: translate3d(0,0,0);
 }
 .inverted .hues-m-beatbar {
   border-color: rgba(255,255,255,0.5);
@@ -145,6 +146,7 @@
   border-color: rgba(0,0,0,0.5);
   border-width: 4px 4px 0;
   border-style: solid;
+  transform: translate3d(0,0,0);
 }
 .inverted .hues-m-controls {
   color: rgba(0,0,0,0.7);

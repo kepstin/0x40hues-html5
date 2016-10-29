@@ -305,7 +305,7 @@
        * If a new beat occurred on this frame, this callback is called after
        * all of the effect updates and the beat callback.
        */
-      frame: [],
+      frame: []
     },
 
     /* Call event listeners

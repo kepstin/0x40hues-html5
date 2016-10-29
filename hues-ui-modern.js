@@ -41,10 +41,14 @@ window.HuesUIModern = (function() {
       this.imageName = null
       this.imageNameLink = null
       this.imageNameText = null
+      this.imageNameTextLength = null
+      this.imageNameClientWidth = null
 
       this.songTitle = null
       this.songTitleLink = null
       this.songTitleText = null
+      this.songTitleTextLength = null
+      this.songTitleClientWidth = null
 
       this.hueName = null
 
@@ -55,6 +59,9 @@ window.HuesUIModern = (function() {
 
       this.queuedResizeImageName = null
       this.queuedResizeSongTitle = null
+
+      this.charWidthNormal = null
+      this.charWidthSmall = null
 
       Object.seal(this)
     }
@@ -81,92 +88,90 @@ window.HuesUIModern = (function() {
 
     Self.prototype.resizeImageName = function() {
       var link = this.imageNameLink
-      var text = this.imageNameText
 
-      link.className = ""
-      if (text.offsetWidth > link.clientWidth) {
-        link.className = "small"
+      var className = ""
+      if (this.imageNameTextLength * this.charWidthNormal > this.imageNameClientWidth) {
+        className = "small";
       }
-      if (text.offsetWidth > link.clientWidth) {
-        link.className = "x-small"
+      if (this.imageNameTextLength * this.charWidthSmall > this.imageNameClientWidth) {
+        className = "x-small";
       }
+      link.className = className;
     }
 
     Self.prototype.handleQueuedResizeImageName = function() {
+      var link = this.imageNameLink;
+      this.imageNameClientWidth = link.clientWidth;
       this.resizeImageName()
       this.queuedResizeImageName = null;
     }
 
     Self.prototype.updateImageName = function(image) {
-      var name = this.imageName
+      var link = this.imageNameLink
+      var text = this.imageNameText
 
-      while (name.firstElementChild) {
-        name.removeChild(name.firstElementChild);
-      }
-
-      var link = name.ownerDocument.createElement("a")
       link.href = image.source
-      link.target = "_blank"
-      name.appendChild(link)
-      this.imageNameLink = link
 
-      var text = name.ownerDocument.createElement("span")
-      text.textContent = image.fullname.toUpperCase()
-      link.appendChild(text)
-      this.imageNameText = text
+      var textContent = image.fullname.toUpperCase()
+      text.textContent = textContent
+      this.imageNameTextLength = textContent.length;
 
       this.resizeImageName()
     }
 
-    Self.prototype.updateSongTitle = function(song) {
-      var title = this.songTitle
-
-      while (title.firstElementChild) {
-        title.removeChild(title.firstElementChild)
+    Self.prototype.setupCharWidth = function(link, text) {
+      var textContent = "";
+      for (var i = 0; i < 100; i++) {
+        textContent += "0";
       }
+      text.textContent = textContent;
 
-      var link = title.ownerDocument.createElement("a")
+      this.charWidthNormal = text.offsetWidth / 100;
+
+      link.className = "small";
+
+      this.charWidthSmall = text.offsetWidth / 100;
+
+      text.textContent = "";
+    }
+
+    Self.prototype.updateSongTitle = function(song) {
+      var link = this.songTitleLink
+      var text = this.songTitleText
+
       link.href = song.source
-      link.target = "_blank"
-      title.appendChild(link)
-      this.songTitleLink = link
 
-      var text = title.ownerDocument.createElement("span")
-      text.textContent = song.title.toUpperCase()
-      link.appendChild(text)
-      this.songTitleText = text
+      var textContent = song.title.toUpperCase()
+      text.textContent = textContent
+      this.songTitleTextLength = textContent.length;
 
       this.resizeSongTitle()
     }
 
     Self.prototype.resizeSongTitle = function() {
       var link = this.songTitleLink
-      var text = this.songTitleText
 
-      link.className = ""
-      if (text.offsetWidth > link.clientWidth) {
-        link.className = "small"
+      var className = ""
+      if (this.songTitleTextLength * this.charWidthNormal > this.songTitleClientWidth) {
+        className = "small";
       }
-      if (text.offsetWidth > link.clientWidth) {
-        link.className = "x-small"
+      if (this.songTitleTextLength * this.charWidthSmall > this.songTitleClientWidth) {
+        className = "x-small";
       }
+      link.className = className;
     }
 
     Self.prototype.handleQueuedResizeSongTitle = function() {
+      var link = this.songTitleLink;
+      this.songTitleClientWidth = link.clientWidth;
       this.resizeSongTitle()
       this.queuedResizeSongTitle = null;
     }
 
     Self.prototype.updateHueName = function(hueInfo) {
-      var name = this.hueName
+      var hueName = this.hueName
 
-      while (name.firstElementChild) {
-        name.removeChild(name.firstElementChild)
-      }
-
-      var text = name.ownerDocument.createElement("span")
-      text.textContent = hueInfo.hue.name.toUpperCase()
-      name.appendChild(text)
+      hueName.textContent = hueInfo.hue.name.toUpperCase()
     }
 
     Self.prototype.handleResize = function() {
@@ -402,14 +407,32 @@ window.HuesUIModern = (function() {
       var imageName = doc.createElement("div")
       imageName.className = "hues-m-imagename"
       controls.appendChild(imageName)
+      var imageNameLink = doc.createElement("a")
+      imageNameLink.href = "#"
+      imageNameLink.target = "_blank"
+      imageName.appendChild(imageNameLink)
+      var imageNameText = doc.createElement("span")
+      imageNameLink.appendChild(imageNameText)
       this.imageName = imageName
+      this.imageNameLink = imageNameLink
+      this.imageNameText = imageNameText
       this.hues.addEventListener("imagechange", this.updateImageName.bind(this))
 
       var songTitle = doc.createElement("div")
       songTitle.className = "hues-m-songtitle"
       controls.appendChild(songTitle)
+      var songTitleLink = doc.createElement("a")
+      songTitleLink.href = "#"
+      songTitleLink.target = "_blank"
+      songTitle.appendChild(songTitleLink)
+      var songTitleText = doc.createElement("span")
+      songTitleLink.appendChild(songTitleText)
       this.songTitle = songTitle
+      this.songTitleLink = songTitleLink
+      this.songTitleText = songTitleText
       this.hues.addEventListener("songchange", this.updateSongTitle.bind(this))
+
+      this.setupCharWidth(songTitleLink, songTitleText);
 
       var leftBox = doc.createElement("div")
       leftBox.className = "hues-m-leftbox"
@@ -442,6 +465,9 @@ window.HuesUIModern = (function() {
 
       this.setupBeatBar()
       this.setupControls()
+
+      this.handleQueuedResizeSongTitle();
+      this.handleQueuedResizeImageName();
 
       window.addEventListener("resize", this.handleResize.bind(this))
     }
