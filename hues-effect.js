@@ -407,7 +407,7 @@ window.HuesEffect = (function() {
 
     /* Circles */
     circleOutStartTime: 0,
-    circleOutRadius: 0,
+    circleOutRadius: 1,
     circleInStartTime: 0,
     circleInRadius: 0,
 
@@ -1079,12 +1079,7 @@ window.HuesEffect = (function() {
           throw new Error("Unsupported blend mode: " + self.blendMode);
         }
 
-        var colorSource;
-        if (self.circles) {
-          colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
-        } else {
-          colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE;
-        }
+        var colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
 
         /* Compile the "noblur" composite shader
          * When no blur is active, saves a whole bunch of texture lookups. */
