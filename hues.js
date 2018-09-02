@@ -1864,8 +1864,8 @@
 
     if (beat.buildup !== null) {
       var nextBeat = { buildup: beat.buildup + 1, loop: null, loopCount: 0 };
-      nextBeat.time = currentLoopStartTime -
-        (self.buildupBeats - nextBeat.buildup) * beatDuration;
+      nextBeat.time = currentBuildupStartTime +
+        nextBeat.buildup * beatDuration;
 
       while (nextBeat.time < time && nextBeat.buildup < self.buildupBeats) {
         beat = nextBeat;
@@ -1877,8 +1877,8 @@
           loop: null,
           loopCount: beat.loopCount
         };
-        nextBeat.time = currentLoopStartTime -
-          (self.buildupBeats - nextBeat.buildup) * beatDuration;
+        nextBeat.time = currentBuildupStartTime +
+          nextBeat.buildup * beatDuration;
       }
     }
 
