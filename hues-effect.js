@@ -320,10 +320,10 @@ window.HuesEffect = (function() {
      * This is the base of the power function used to calculate blur decay.
      *
      * To match the flash, use one of the following values:
-     * low: 1.3
+     * slow: 1.3
      * medium: 1.6
-     * high: 2.0 (default)
-     * vhigh: 2.6
+     * fast: 2.0 (default)
+     * faster!: 2.6
      */
     blurDecay: 2.0,
 
@@ -341,6 +341,9 @@ window.HuesEffect = (function() {
     /* New canvas width and height, from resize callback */
     newCanvasClientWidth: 0,
     newCanvasClientHeight: 0,
+
+    /* Whether a setting has changed such that the shaders need to be recompiled */
+    shaderRecompileNeeded: false,
 
     /* The compiled shader programs */
     resampleShader: null,
@@ -415,9 +418,58 @@ window.HuesEffect = (function() {
     circleInStartTime: 0,
     circleInRadius: 0,
 
+    /* Configuration */
+
+    setSmartAlign(smartAlign) {
+      self.smartAlign = Boolean(smartAlign);
+    },
+
+    setScale(scale) {
+      let newScale = Number(scale);
+      if (!Number.isInteger(newScale)) {
+        throw new Error("New scale mode " + scale + " is not an integer.");
+      }
+      if (newScale < 0 || newScale > 2) {
+        throw new Error("Unsupported scale mode: " + scale);
+      }
+      self.scale = newScale;
+    },
+
+    setImageSmoothing(imageSmoothing) {
+      self.imageSmoothing = Boolean(imageSmoothing);
+    },
+
+    setBlendMode(blendMode) {
+      let newBlendMode = Number(blendMode);
+      if (!Number.isInteger(newBlendMode)) {
+        throw new Error("New blend mode " + blendMode + " is not an integer.");
+      }
+      if (newBlendMode < 0 || newBlendMode > 3) {
+        throw new Error("Unsupported blend mode: " + blendMode);
+      }
+      self.blendMode = newBlendMode;
+      self.shaderRecompileNeeded = true;
+    },
+
+    setBlurAmount(blurAmount) {
+      let newBlurAmount = Number(blurAmount);
+      if (!Number.isFinite(newBlurAmount) || newBlurAmount < 0.0) {
+        throw new Error("Invalid blur amount: " + blurAmount);
+      }
+      self.blurAmount = newBlurAmount;
+    },
+
+    setBlurDecay(blurDecay) {
+      let newBlurDecay = Number(blurDecay);
+      if (!Number.isFinite(newBlurDecay) || newBlurDecay <= 1.0) {
+        throw new Error("Invalid blur decay: " + blurDecay);
+      }
+      self.blurDecay = newBlurDecay;
+    },
+
     /* Loading callbacks */
 
-    imageLoadCallback: function(image, blob) {
+    imageLoadCallback(image, blob) {
       return new Promise(function(resolve, reject) {
         var img = document.createElement("img");
         img.addEventListener("load", function() {
@@ -426,9 +478,6 @@ window.HuesEffect = (function() {
           gl.bindTexture(gl.TEXTURE_2D, texture);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          // TODO: allow switching between nearest and linear scaling?
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE_ALPHA, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, img);
 
           image.texture = texture;
@@ -456,9 +505,6 @@ window.HuesEffect = (function() {
           gl.bindTexture(gl.TEXTURE_2D, texture);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          // TODO: allow switching between nearest and linear scaling?
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE_ALPHA, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, img);
 
           image.textures[frame - 1] = texture;
@@ -915,6 +961,10 @@ window.HuesEffect = (function() {
 
     /* The awesome main function that actually renders a frame */
     renderFrame: function() {
+      if (self.shaderRecompileNeeded) {
+        self.compileShader();
+      }
+
       var gl = self.gl;
 
       var shader = self.compositeShader;
@@ -934,6 +984,13 @@ window.HuesEffect = (function() {
       //gl.bindTexture(gl.TEXTURE_2D, self.compositeTexture);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, self.imageTexture);
+      if (self.imageSmoothing) {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      }
       var uImageLoc = gl.getUniformLocation(shader, "u_image");
       gl.uniform1i(uImageLoc, 0);
 
@@ -1057,90 +1114,88 @@ window.HuesEffect = (function() {
 
     /* Compile the shader programs that run the effects. */
     compileShader: function() {
-      return new Promise(function(resolve, reject) {
-        var gl = self.gl;
+      var gl = self.gl;
 
-        console.log("VENDOR", gl.getParameter(gl.VENDOR));
-        console.log("VERSION", gl.getParameter(gl.VERSION));
-        console.log("MAX_COMBINED_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-        console.log("MAX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));
-        console.log("MAX_TEXTURE_SIZE", gl.getParameter(gl.MAX_TEXTURE_SIZE));
-        console.log("MAX_VARYING_VECTORS", gl.getParameter(gl.MAX_VARYING_VECTORS));
-        console.log("MAX_VERTEX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS));
-        console.log("UNPACK_COLORSPACE_CONVERSION_WEBGL", gl.getParameter(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL));
-        console.log("UNPACK_FLIP_Y_WEBGL", gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL));
-        console.log("UNPACK_PREMULIPLY_ALPHA_WEBGL", gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL));
+      console.log("VENDOR", gl.getParameter(gl.VENDOR));
+      console.log("VERSION", gl.getParameter(gl.VERSION));
+      console.log("MAX_COMBINED_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+      console.log("MAX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));
+      console.log("MAX_TEXTURE_SIZE", gl.getParameter(gl.MAX_TEXTURE_SIZE));
+      console.log("MAX_VARYING_VECTORS", gl.getParameter(gl.MAX_VARYING_VECTORS));
+      console.log("MAX_VERTEX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS));
+      console.log("UNPACK_COLORSPACE_CONVERSION_WEBGL", gl.getParameter(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL));
+      console.log("UNPACK_FLIP_Y_WEBGL", gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL));
+      console.log("UNPACK_PREMULIPLY_ALPHA_WEBGL", gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL));
 
-	var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
-	console.log("Compiling shaders for MAX_VARYING_VECTORS=" + varyings);
+      var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
+      console.log("Compiling shaders for MAX_VARYING_VECTORS=" + varyings);
 
-	var vertexShaderSource;
-	var fragmentShaderSource;
+      var vertexShaderSource;
+      var fragmentShaderSource;
 
-        /* Compile the compositing shader */
+      /* Compile the compositing shader */
 
-        /* Determine which blend function to use */
-        var fragmentBlendSource;
-        switch (self.blendMode) {
-        case 0:
-          fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_PLAIN;
-          break;
-        case 1:
-          fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_ALPHA;
-          break;
-        case 2:
-          fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT;
-          break;
-        case 3:
-          fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT_ALPHA;
-        default:
-          throw new Error("Unsupported blend mode: " + self.blendMode);
-        }
+      /* Determine which blend function to use */
+      var fragmentBlendSource;
+      switch (self.blendMode) {
+      case 0:
+        fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_PLAIN;
+        break;
+      case 1:
+        fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_ALPHA;
+        break;
+      case 2:
+      default:
+        fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT;
+        break;
+      case 3:
+        fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT_ALPHA;
+        break;
+      }
 
-        var colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
+      var colorSource = COMPOSITE_FRAGMENT_SOURCE_HUE_CIRCLES;
 
-        /* Compile the "noblur" composite shader
-         * When no blur is active, saves a whole bunch of texture lookups. */
+      /* Compile the "noblur" composite shader
+       * When no blur is active, saves a whole bunch of texture lookups. */
+      vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
+        COMPOSITE_VERTEX_SOURCE_NOBLUR + COMPOSITE_VERTEX_SOURCE_FOOTER;
+      fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
+        COMPOSITE_FRAGMENT_SOURCE_NOBLUR + fragmentBlendSource +
+        colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+      self.compositeNoblurShader = self.compileOneShader(
+          vertexShaderSource, fragmentShaderSource);
+
+      /* Select the blur fragment shader to use based on the number
+       * of varying vectors available. More vectors gives better-looking
+       * blur results */
+      if (varyings >= 27) {
         vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-          COMPOSITE_VERTEX_SOURCE_NOBLUR + COMPOSITE_VERTEX_SOURCE_FOOTER;
+          COMPOSITE_VERTEX_SOURCE_BLUR_V27 + COMPOSITE_VERTEX_SOURCE_FOOTER;
         fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-          COMPOSITE_FRAGMENT_SOURCE_NOBLUR + fragmentBlendSource +
+          COMPOSITE_FRAGMENT_SOURCE_BLUR_V27 + fragmentBlendSource +
           colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-        self.compositeNoblurShader = self.compileOneShader(
+      } else if (varyings >= 15) {
+        vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
+          COMPOSITE_VERTEX_SOURCE_BLUR_V15 + COMPOSITE_VERTEX_SOURCE_FOOTER;
+        fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
+          COMPOSITE_FRAGMENT_SOURCE_BLUR_V15 + fragmentBlendSource +
+          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+      } else if (varyings >= 9) {
+        vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
+          COMPOSITE_VERTEX_SOURCE_BLUR_V9 + COMPOSITE_VERTEX_SOURCE_FOOTER;
+        fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
+          COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 + fragmentBlendSource +
+          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+      }
+
+      if (varyings >= 9) {
+        self.compositeShader = self.compileOneShader(
             vertexShaderSource, fragmentShaderSource);
+      } else {
+        self.compositeShader = self.compositeNoblurShader;
+      }
 
-        /* Select the blur fragment shader to use based on the number
-         * of varying vectors available. More vectors gives better-looking
-         * blur results */
-	if (varyings >= 27) {
-          vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-            COMPOSITE_VERTEX_SOURCE_BLUR_V27 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-          fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-            COMPOSITE_FRAGMENT_SOURCE_BLUR_V27 + fragmentBlendSource +
-	    colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-	} else if (varyings >= 15) {
-          vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-            COMPOSITE_VERTEX_SOURCE_BLUR_V15 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-          fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-            COMPOSITE_FRAGMENT_SOURCE_BLUR_V15 + fragmentBlendSource +
-            colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-        } else if (varyings >= 9) {
-          vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-            COMPOSITE_VERTEX_SOURCE_BLUR_V9 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-          fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-            COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 + fragmentBlendSource +
-            colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-        }
-
-        if (varyings >= 9) {
-          self.compositeShader = self.compileOneShader(
-              vertexShaderSource, fragmentShaderSource);
-        } else {
-          self.compositeShader = self.compositeNoblurShader;
-        }
-
-        return resolve();
-      });
+      self.shaderRecompileNeeded = false;
     },
 
     setupVertexBuffers: function() {
@@ -1190,9 +1245,28 @@ window.HuesEffect = (function() {
       hues.addEventListener("frame", self.frameCallback);
     },
 
+    parseOptions: function(options) {
+      if (typeof(options.smartAlign) !== "undefined") {
+        self.setSmartAlign(options.smartAlign);
+      }
+      if (typeof(options.scale) !== "undefined") {
+        self.setScale(options.scale);
+      }
+      if (typeof(options.imageSmoothing) !== "undefined") {
+        self.setImageSmoothing(options.imageSmoothing);
+      }
+      if (typeof(options.blendMode) !== "undefined") {
+        self.setBlendMode(options.blendMode);
+      }
+      if (typeof(options.blurAmount) !== "undefined") {
+        self.setBlurAmount(options.blurAmount);
+      }
+    },
+
     setupPromise: null,
     setup: function(hues, canvas, options) {
       self.hues = hues;
+      self.parseOptions(options);
       var setupPromise = self.getWebglContext(canvas)
         .then(self.compileShader)
         .then(self.setupVertexBuffers)
@@ -1207,12 +1281,25 @@ window.HuesEffect = (function() {
   return {
     setup: self.setup,
     setupComplete: self.setupComplete,
-    renderFrame: function() {
+    renderFrame() {
       self.resizeCallback();
       self.frameCallback(0);
     },
-    updateResize: function() {
+    updateResize() {
       self.resizeCallback();
-    }
+    },
+    /* Runtime Configuration */
+    set smartAlign(smartAlign) { self.setSmartAlign(smartAlign); },
+    get smartAlign() { return self.smartAlign; },
+    set scale(scale) { self.setScale(scale); },
+    get scale() { return self.scale; },
+    set imageSmoothing(imageSmoothing) { self.setImageSmoothing(imageSmoothing); },
+    get imageSmoothing() { return self.imageSmoothing; },
+    set blendMode(blendMode) { self.setBlendMode(blendMode); },
+    get blendMode() { return self.blendMode; },
+    set blurAmount(blurAmount) { self.setBlurAmount(blurAmount); },
+    get blurAmount() { return self.blurAmount; },
+    set blurDecay(blurDecay) { self.setBlurDecay(blurDecay); },
+    get blurDecay() { return self.blurDecay; }
   };
 })();
