@@ -89,101 +89,89 @@ window.HuesEffect = (function() {
     "uniform float u_blackout;\n" +
     "uniform vec3 u_blackoutColor;\n" +
     "uniform float u_invert;\n" +
-    "uniform sampler2D u_image;\n";
+    "uniform sampler2D u_image;\n" +
+    "vec4 sample(vec2 pos) {\n" +
+    "  float border = float(pos.x >= 0.0 && pos.x <= 1.0 && pos.y >= 0.0 && pos.y <= 1.0);\n" +
+    "  return texture2D(u_image, pos) * border;\n" +
+    "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOBLUR =
     "varying vec2 v_imageSample;\n" +
     "vec4 blur() {\n" +
-    "  if (v_imageSample.x < 0.0 || v_imageSample.y < 0.0 ||\n" +
-    "      v_imageSample.x > 1.0 || v_imageSample.y > 1.0) {\n" +
-    "    return vec4(0.0);\n" +
-    "  }\n" +
-    "  return texture2D(u_image, v_imageSample);\n" +
+    "  return sample(v_imageSample);\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 =
     "varying vec2 v_blurSample[9];\n" +
     "vec4 blur() {\n" +
-    "  if (v_blurSample[4].x < 0.0 || v_blurSample[4].y < 0.0 ||\n" +
-    "      v_blurSample[4].x > 1.0 || v_blurSample[4].y > 1.0) {\n" +
-    "    return vec4(0.0);\n" +
-    "  }\n" +
     "  vec4 color = vec4(0.0);\n" +
     "  /* One dimensional discrete Gaussian kernel, 9 samples */\n" +
     "  /* sigma=1.5 samples, normalized */\n" +
-    "  color += texture2D(u_image, v_blurSample[0]) * 0.008488;\n" +
-    "  color += texture2D(u_image, v_blurSample[1]) * 0.038078;\n" +
-    "  color += texture2D(u_image, v_blurSample[2]) * 0.111165;\n" +
-    "  color += texture2D(u_image, v_blurSample[3]) * 0.211357;\n" +
-    "  color += texture2D(u_image, v_blurSample[4]) * 0.261824;\n" +
-    "  color += texture2D(u_image, v_blurSample[5]) * 0.211357;\n" +
-    "  color += texture2D(u_image, v_blurSample[6]) * 0.111165;\n" +
-    "  color += texture2D(u_image, v_blurSample[7]) * 0.038078;\n" +
-    "  color += texture2D(u_image, v_blurSample[8]) * 0.008488;\n" +
+    "  color += sample(v_blurSample[0]) * 0.008488;\n" +
+    "  color += sample(v_blurSample[1]) * 0.038078;\n" +
+    "  color += sample(v_blurSample[2]) * 0.111165;\n" +
+    "  color += sample(v_blurSample[3]) * 0.211357;\n" +
+    "  color += sample(v_blurSample[4]) * 0.261824;\n" +
+    "  color += sample(v_blurSample[5]) * 0.211357;\n" +
+    "  color += sample(v_blurSample[6]) * 0.111165;\n" +
+    "  color += sample(v_blurSample[7]) * 0.038078;\n" +
+    "  color += sample(v_blurSample[8]) * 0.008488;\n" +
     "  return color;\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLUR_V15 =
     "varying vec2 v_blurSample[15];\n" +
     "vec4 blur() {\n" +
-    "  if (v_blurSample[7].x < 0.0 || v_blurSample[7].y < 0.0 ||\n" +
-    "      v_blurSample[7].x > 1.0 || v_blurSample[7].y > 1.0) {\n" +
-    "    return vec4(0.0);\n" +
-    "  }\n" +
     "  vec4 color = vec4(0.0);\n" +
     "  /* One dimensional discrete Gaussian kernel, 15 samples */\n" +
     "  /* sigma=2.5 samples, normalized */\n" +
-    "  color += texture2D(u_image, v_blurSample[ 0]) * 0.003320;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 1]) * 0.009267;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 2]) * 0.022087;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 3]) * 0.044948;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 4]) * 0.078109;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 5]) * 0.115911;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 6]) * 0.146884;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 7]) * 0.158949;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 8]) * 0.146884;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 9]) * 0.115911;\n" +
-    "  color += texture2D(u_image, v_blurSample[10]) * 0.078109;\n" +
-    "  color += texture2D(u_image, v_blurSample[11]) * 0.044948;\n" +
-    "  color += texture2D(u_image, v_blurSample[12]) * 0.022087;\n" +
-    "  color += texture2D(u_image, v_blurSample[13]) * 0.009267;\n" +
-    "  color += texture2D(u_image, v_blurSample[14]) * 0.003320;\n" +
+    "  color += sample(v_blurSample[ 0]) * 0.003320;\n" +
+    "  color += sample(v_blurSample[ 1]) * 0.009267;\n" +
+    "  color += sample(v_blurSample[ 2]) * 0.022087;\n" +
+    "  color += sample(v_blurSample[ 3]) * 0.044948;\n" +
+    "  color += sample(v_blurSample[ 4]) * 0.078109;\n" +
+    "  color += sample(v_blurSample[ 5]) * 0.115911;\n" +
+    "  color += sample(v_blurSample[ 6]) * 0.146884;\n" +
+    "  color += sample(v_blurSample[ 7]) * 0.158949;\n" +
+    "  color += sample(v_blurSample[ 8]) * 0.146884;\n" +
+    "  color += sample(v_blurSample[ 9]) * 0.115911;\n" +
+    "  color += sample(v_blurSample[10]) * 0.078109;\n" +
+    "  color += sample(v_blurSample[11]) * 0.044948;\n" +
+    "  color += sample(v_blurSample[12]) * 0.022087;\n" +
+    "  color += sample(v_blurSample[13]) * 0.009267;\n" +
+    "  color += sample(v_blurSample[14]) * 0.003320;\n" +
     "  return color;\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLUR_V27 =
     "varying vec2 v_blurSample[27];\n" +
     "vec4 blur() {\n" +
-    "  if (v_blurSample[13].x < 0.0 || v_blurSample[13].y < 0.0 ||\n" +
-    "      v_blurSample[13].x > 1.0 || v_blurSample[13].y > 1.0) {\n" +
-    "    return vec4(0.0);\n" +
-    "  }\n" +
     "  vec4 color = vec4(0.0);\n" +
     "  /* One dimensional discrete Gaussian kernel, 27 samples */\n" +
     "  /* sigma=4.5 samples, normalized */\n" +
-    "  color += texture2D(u_image, v_blurSample[ 0]) * 0.001390;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 1]) * 0.002571;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 2]) * 0.004527;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 3]) * 0.007587;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 4]) * 0.012105;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 5]) * 0.018387;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 6]) * 0.026588;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 7]) * 0.036604;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 8]) * 0.047973;\n" +
-    "  color += texture2D(u_image, v_blurSample[ 9]) * 0.059856;\n" +
-    "  color += texture2D(u_image, v_blurSample[10]) * 0.071099;\n" +
-    "  color += texture2D(u_image, v_blurSample[11]) * 0.080401;\n" +
-    "  color += texture2D(u_image, v_blurSample[12]) * 0.086556;\n" +
-    "  color += texture2D(u_image, v_blurSample[13]) * 0.086556;\n" +
-    "  color += texture2D(u_image, v_blurSample[14]) * 0.086556;\n" +
-    "  color += texture2D(u_image, v_blurSample[15]) * 0.080401;\n" +
-    "  color += texture2D(u_image, v_blurSample[16]) * 0.071099;\n" +
-    "  color += texture2D(u_image, v_blurSample[17]) * 0.059856;\n" +
-    "  color += texture2D(u_image, v_blurSample[18]) * 0.047973;\n" +
-    "  color += texture2D(u_image, v_blurSample[19]) * 0.036604;\n" +
-    "  color += texture2D(u_image, v_blurSample[20]) * 0.026588;\n" +
-    "  color += texture2D(u_image, v_blurSample[21]) * 0.018387;\n" +
-    "  color += texture2D(u_image, v_blurSample[22]) * 0.012105;\n" +
-    "  color += texture2D(u_image, v_blurSample[23]) * 0.007587;\n" +
-    "  color += texture2D(u_image, v_blurSample[24]) * 0.004527;\n" +
-    "  color += texture2D(u_image, v_blurSample[25]) * 0.002571;\n" +
-    "  color += texture2D(u_image, v_blurSample[26]) * 0.001390;\n" +
+    "  color += sample(v_blurSample[ 0]) * 0.001390;\n" +
+    "  color += sample(v_blurSample[ 1]) * 0.002571;\n" +
+    "  color += sample(v_blurSample[ 2]) * 0.004527;\n" +
+    "  color += sample(v_blurSample[ 3]) * 0.007587;\n" +
+    "  color += sample(v_blurSample[ 4]) * 0.012105;\n" +
+    "  color += sample(v_blurSample[ 5]) * 0.018387;\n" +
+    "  color += sample(v_blurSample[ 6]) * 0.026588;\n" +
+    "  color += sample(v_blurSample[ 7]) * 0.036604;\n" +
+    "  color += sample(v_blurSample[ 8]) * 0.047973;\n" +
+    "  color += sample(v_blurSample[ 9]) * 0.059856;\n" +
+    "  color += sample(v_blurSample[10]) * 0.071099;\n" +
+    "  color += sample(v_blurSample[11]) * 0.080401;\n" +
+    "  color += sample(v_blurSample[12]) * 0.086556;\n" +
+    "  color += sample(v_blurSample[13]) * 0.086556;\n" +
+    "  color += sample(v_blurSample[14]) * 0.086556;\n" +
+    "  color += sample(v_blurSample[15]) * 0.080401;\n" +
+    "  color += sample(v_blurSample[16]) * 0.071099;\n" +
+    "  color += sample(v_blurSample[17]) * 0.059856;\n" +
+    "  color += sample(v_blurSample[18]) * 0.047973;\n" +
+    "  color += sample(v_blurSample[19]) * 0.036604;\n" +
+    "  color += sample(v_blurSample[20]) * 0.026588;\n" +
+    "  color += sample(v_blurSample[21]) * 0.018387;\n" +
+    "  color += sample(v_blurSample[22]) * 0.012105;\n" +
+    "  color += sample(v_blurSample[23]) * 0.007587;\n" +
+    "  color += sample(v_blurSample[24]) * 0.004527;\n" +
+    "  color += sample(v_blurSample[25]) * 0.002571;\n" +
+    "  color += sample(v_blurSample[26]) * 0.001390;\n" +
     "  return color;\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_HUE =
@@ -217,27 +205,40 @@ window.HuesEffect = (function() {
     "  sample *= 0.7;\n" +
     "  return vec4(sample.rgb + color * (1.0 - sample.a), 1.0);\n" +
     "}\n";
-  var COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT =
-    "float overlay(float a, float b) {\n" +
-    "  if (a < 0.5) {\n" +
-    "    return 2.0 * a * b;\n" +
-    "  } else {\n" +
-    "    return 1.0 - 2.0 * (1.0 - a) * (1.0 - b);\n" +
-    "  }\n" +
+  var COMPOSITE_FRAGMENT_SOURCE_BLEND_HELPER_HARDLIGHT =
+    "vec3 multiply(vec3 backdrop, vec3 source) {\n" +
+    "  return backdrop * source;\n" +
     "}\n" +
-    "vec3 overlay(vec3 a, vec3 b) {\n" +
-    "  return vec3(\n" +
-    "    overlay(a.r, b.r), overlay(a.g, b.g), overlay(a.b, b.b));\n" +
+    "vec3 screen(vec3 backdrop, vec3 source) {\n" +
+    "  return backdrop + source - (backdrop * source);\n" +
     "}\n" +
-    "vec4 blend(vec4 sample, vec3 color) {\n" +
-    "  // First alpha blend the image onto solid white\n" +
-    "  sample = vec4(sample.rgb + vec3(1.0) * (1.0 - sample.a), 1.0);\n" +
-    "  // Then calculate the hard light result\n" +
-    "  vec3 lit = overlay(color, vec3(sample));\n" +
-    "  // Then mix the two; 70% hard light\n" +
-    "  return vec4(mix(vec3(sample), lit, 0.7), 1.0);\n" +
+    "vec3 hard_light(vec3 backdrop, vec3 source) {\n" +
+    "  backdrop *= 2.0;\n" +
+    "  vec3 thresh = step(1.0, backdrop);\n" +
+    "  return mix(\n" +
+    "    screen(backdrop - vec3(1.0), source),\n" +
+    "    multiply(backdrop, source),\n" +
+    "    thresh\n" +
+    "  );\n" +
+    "}\n" +
+    "vec4 hard_light(vec4 backdrop, vec3 c_source, float opacity) {\n" +
+    "  vec3 c_backdrop = clamp(backdrop.rgb / backdrop.a, 0.0, 1.0);\n" +
+    "  vec3 c_hard_light = hard_light(c_backdrop, c_source);\n" +
+    "  vec3 c_result = mix(c_backdrop, c_hard_light, opacity);\n" +
+    "  return vec4(c_result * backdrop.a, backdrop.a);\n" +
     "}\n";
-
+  var COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT =
+    COMPOSITE_FRAGMENT_SOURCE_BLEND_HELPER_HARDLIGHT +
+    "vec4 blend(vec4 sample, vec3 color) {\n" +
+    "  sample = vec4(sample.rgb + vec3(1.0) * (1.0 - sample.a), 1.0);\n" +
+    "  return hard_light(sample, color, 0.7);\n" +
+    "}\n";
+  var COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT_ALPHA =
+    COMPOSITE_FRAGMENT_SOURCE_BLEND_HELPER_HARDLIGHT +
+    "vec4 blend(vec4 sample, vec3 color) {\n" +
+    "  vec4 hl = hard_light(sample, color, 0.7);\n" +
+    "  return vec4(hl.rgb + color * (1.0 - hl.a), 1.0);\n" +
+    "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOVIGNETTE =
     "vec4 vignette(vec4 sample) {\n" +
     "  return sample;\n" +
@@ -294,9 +295,12 @@ window.HuesEffect = (function() {
      *   Image is alpha-blended over the hue.
      * 1: "alpha"
      *   Image is alpha-blended over the hue at 70% opacity.
-     * 2: "hard light".
+     * 2: "hard light"
      *   Image is alpha-blended over a white background. The hue is blended
      *   over the image with "hard light" mode at 70% opacity.
+     * 3: "hard light + alpha"
+     *   The hue is blended over the image with "hard light" mode at 70%
+     *   opacity, then the result is alpha-blended over the hue.
      */
     blendMode: 2,
 
@@ -425,7 +429,7 @@ window.HuesEffect = (function() {
           // TODO: allow switching between nearest and linear scaling?
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE_ALPHA, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, img);
 
           image.texture = texture;
           image.width = img.naturalWidth;
@@ -455,7 +459,7 @@ window.HuesEffect = (function() {
           // TODO: allow switching between nearest and linear scaling?
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, img);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE_ALPHA, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, img);
 
           image.textures[frame - 1] = texture;
           image.width = img.naturalWidth;
@@ -809,7 +813,7 @@ window.HuesEffect = (function() {
        * to blur at 60fps! */
       var startTime = self.blurStartTime;
       var radius = 96 * self.blurAmount * Math.pow(
-          self.blurDecay, -(time - startTime) * 45 + 1);
+          self.blurDecay, -(time - startTime) * 30 + 1);
 
       /* Termination condition */
       if (radius < 0.5) {
@@ -1055,6 +1059,18 @@ window.HuesEffect = (function() {
     compileShader: function() {
       return new Promise(function(resolve, reject) {
         var gl = self.gl;
+
+        console.log("VENDOR", gl.getParameter(gl.VENDOR));
+        console.log("VERSION", gl.getParameter(gl.VERSION));
+        console.log("MAX_COMBINED_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+        console.log("MAX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));
+        console.log("MAX_TEXTURE_SIZE", gl.getParameter(gl.MAX_TEXTURE_SIZE));
+        console.log("MAX_VARYING_VECTORS", gl.getParameter(gl.MAX_VARYING_VECTORS));
+        console.log("MAX_VERTEX_TEXTURE_IMAGE_UNITS", gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS));
+        console.log("UNPACK_COLORSPACE_CONVERSION_WEBGL", gl.getParameter(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL));
+        console.log("UNPACK_FLIP_Y_WEBGL", gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL));
+        console.log("UNPACK_PREMULIPLY_ALPHA_WEBGL", gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL));
+
 	var varyings = gl.getParameter(gl.MAX_VARYING_VECTORS);
 	console.log("Compiling shaders for MAX_VARYING_VECTORS=" + varyings);
 
@@ -1075,6 +1091,8 @@ window.HuesEffect = (function() {
         case 2:
           fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT;
           break;
+        case 3:
+          fragmentBlendSource = COMPOSITE_FRAGMENT_SOURCE_BLEND_HARDLIGHT_ALPHA;
         default:
           throw new Error("Unsupported blend mode: " + self.blendMode);
         }
