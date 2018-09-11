@@ -1217,7 +1217,7 @@
               self.callEventListeners("progress", 1, 0);
             })
             .catch(function(er) {
-              console.log(err);
+              console.log(er);
               return Promise.reject(er);
             })
           );
