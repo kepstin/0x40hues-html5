@@ -1193,6 +1193,9 @@ window.HuesEffect = (function() {
             vertexShaderSource, fragmentShaderSource);
       } else {
         self.compositeShader = self.compositeNoblurShader;
+
+        console.log("Your GPU doesn't have enough MAX_VARYING_VECTORS to enable blur!");
+        console.log("Either you're running on a potato, or privacy features to resist fingerprinting in your browser are limiting the available capabilities.");
       }
 
       self.shaderRecompileNeeded = false;
