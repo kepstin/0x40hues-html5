@@ -89,10 +89,12 @@ window.HuesEffect = (function() {
     "uniform float u_blackout;\n" +
     "uniform vec3 u_blackoutColor;\n" +
     "uniform float u_invert;\n" +
-    "uniform sampler2D u_image;\n" +
+    "uniform sampler2D u_image;\n";
+  var COMPOSITE_FRAGMENT_SOURCE_SAMPLE =
     "vec4 sample(vec2 pos) {\n" +
+    "  vec3 c = hue();\n" +
     "  float border = float(pos.x >= 0.0 && pos.x <= 1.0 && pos.y >= 0.0 && pos.y <= 1.0);\n" +
-    "  return texture2D(u_image, pos) * border;\n" +
+    "  return blend(texture2D(u_image, pos) * border, c);\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_NOBLUR =
     "varying vec2 v_imageSample;\n" +
@@ -215,11 +217,12 @@ window.HuesEffect = (function() {
     "vec3 hard_light(vec3 backdrop, vec3 source) {\n" +
     "  backdrop *= 2.0;\n" +
     "  vec3 thresh = step(1.0, backdrop);\n" +
-    "  return mix(\n" +
+    "  vec3 mix = mix(\n" +
     "    screen(backdrop - vec3(1.0), source),\n" +
     "    multiply(backdrop, source),\n" +
     "    thresh\n" +
     "  );\n" +
+    "  return clamp(mix, 0.0, 1.0);\n" +
     "}\n" +
     "vec4 hard_light(vec4 backdrop, vec3 c_source, float opacity) {\n" +
     "  vec3 c_backdrop = clamp(backdrop.rgb / backdrop.a, 0.0, 1.0);\n" +
@@ -259,9 +262,7 @@ window.HuesEffect = (function() {
     "}\n" +
     "void main() {\n" +
     "  vec4 blurSample = blur();\n" +
-    "  vec3 c = hue();\n" +
-    "  vec4 blendSample = blend(blurSample, c);\n" +
-    "  vec4 blackoutSample = blackout(blendSample);\n" +
+    "  vec4 blackoutSample = blackout(blurSample);\n" +
     "  vec4 invertSample = invert(blackoutSample);\n" +
     "  gl_FragColor = invertSample;\n" +
     "}\n";
@@ -1157,40 +1158,48 @@ window.HuesEffect = (function() {
 
       /* Compile the "noblur" composite shader
        * When no blur is active, saves a whole bunch of texture lookups. */
-      vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-        COMPOSITE_VERTEX_SOURCE_NOBLUR + COMPOSITE_VERTEX_SOURCE_FOOTER;
-      fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-        COMPOSITE_FRAGMENT_SOURCE_NOBLUR + fragmentBlendSource +
-        colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-      self.compositeNoblurShader = self.compileOneShader(
-          vertexShaderSource, fragmentShaderSource);
+      vertexShaderSource =
+        COMPOSITE_VERTEX_SOURCE_HEADER +
+        COMPOSITE_VERTEX_SOURCE_NOBLUR +
+        COMPOSITE_VERTEX_SOURCE_FOOTER;
+      fragmentShaderSource =
+        COMPOSITE_FRAGMENT_SOURCE_HEADER +
+        colorSource +
+        fragmentBlendSource +
+        COMPOSITE_FRAGMENT_SOURCE_SAMPLE +
+        COMPOSITE_FRAGMENT_SOURCE_NOBLUR +
+        COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+      self.compositeNoblurShader = self.compileOneShader(vertexShaderSource, fragmentShaderSource);
 
       /* Select the blur fragment shader to use based on the number
        * of varying vectors available. More vectors gives better-looking
        * blur results */
+      var vertexBlurSource;
+      var fragmentBlurSource;
       if (varyings >= 27) {
-        vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-          COMPOSITE_VERTEX_SOURCE_BLUR_V27 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-        fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-          COMPOSITE_FRAGMENT_SOURCE_BLUR_V27 + fragmentBlendSource +
-          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+        vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V27;
+        fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V27;
       } else if (varyings >= 15) {
-        vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-          COMPOSITE_VERTEX_SOURCE_BLUR_V15 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-        fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-          COMPOSITE_FRAGMENT_SOURCE_BLUR_V15 + fragmentBlendSource +
-          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+        vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V15;
+        fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V15;
       } else if (varyings >= 9) {
-        vertexShaderSource = COMPOSITE_VERTEX_SOURCE_HEADER +
-          COMPOSITE_VERTEX_SOURCE_BLUR_V9 + COMPOSITE_VERTEX_SOURCE_FOOTER;
-        fragmentShaderSource = COMPOSITE_FRAGMENT_SOURCE_HEADER +
-          COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 + fragmentBlendSource +
-          colorSource + COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+        vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V9;
+        fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V9;
       }
 
       if (varyings >= 9) {
-        self.compositeShader = self.compileOneShader(
-            vertexShaderSource, fragmentShaderSource);
+        vertexShaderSource =
+          COMPOSITE_VERTEX_SOURCE_HEADER +
+          vertexBlurSource +
+          COMPOSITE_VERTEX_SOURCE_FOOTER;
+        fragmentShaderSource =
+          COMPOSITE_FRAGMENT_SOURCE_HEADER +
+          colorSource +
+          fragmentBlendSource +
+          COMPOSITE_FRAGMENT_SOURCE_SAMPLE +
+          fragmentBlurSource +
+          COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+        self.compositeShader = self.compileOneShader(vertexShaderSource, fragmentShaderSource);
       } else {
         self.compositeShader = self.compositeNoblurShader;
 
