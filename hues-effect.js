@@ -13,6 +13,19 @@ window.HuesEffect = (function() {
     "void blur(vec2 position) {\n" +
     "  v_imageSample = position;\n" +
     "}\n";
+  var COMPOSITE_VERTEX_SOURCE_BLUR_V8 =
+    "varying vec2 v_blurSample[8];\n" +
+    "uniform vec2 u_blur;\n" +
+    "void blur(vec2 position) {\n" +
+    "  v_blurSample[0] = position + u_blur * -1.000000000;\n" +
+    "  v_blurSample[1] = position + u_blur * -0.714285714;\n" +
+    "  v_blurSample[2] = position + u_blur * -0.428571429;\n" +
+    "  v_blurSample[3] = position + u_blur * -0.142857143;\n" +
+    "  v_blurSample[4] = position + u_blur *  0.142857143;\n" +
+    "  v_blurSample[5] = position + u_blur *  0.428571429;\n" +
+    "  v_blurSample[6] = position + u_blur *  0.714285714;\n" +
+    "  v_blurSample[7] = position + u_blur *  1.000000000;\n" +
+    "}\n";
   var COMPOSITE_VERTEX_SOURCE_BLUR_V9 =
     "varying vec2 v_blurSample[9];\n" +
     "uniform vec2 u_blur;\n" +
@@ -77,7 +90,7 @@ window.HuesEffect = (function() {
     "  v_blurSample[23] = position + u_blur *  0.769230769;\n" +
     "  v_blurSample[24] = position + u_blur *  0.846153846;\n" +
     "  v_blurSample[25] = position + u_blur *  0.923076923;\n" +
-    "  v_blurSample[26] = position + u_blur * -1.000000000;\n" +
+    "  v_blurSample[26] = position + u_blur *  1.000000000;\n" +
     "}\n";
   var COMPOSITE_VERTEX_SOURCE_FOOTER =
     "void main() {\n" +
@@ -100,6 +113,20 @@ window.HuesEffect = (function() {
     "varying vec2 v_imageSample;\n" +
     "vec4 blur() {\n" +
     "  return sample(v_imageSample);\n" +
+    "}\n";
+  var COMPOSITE_FRAGMENT_SOURCE_BLUR_V8 =
+    "varying vec2 v_blurSample[8];\n" +
+    "vec4 blur() {\n" +
+    "  vec4 color = vec4(0.0);\n" +
+    "  color += sample(v_blurSample[0]) * 0.013960;\n" +
+    "  color += sample(v_blurSample[1]) * 0.060680;\n" +
+    "  color += sample(v_blurSample[2]) * 0.161612;\n" +
+    "  color += sample(v_blurSample[3]) * 0.263748;\n" +
+    "  color += sample(v_blurSample[4]) * 0.263748;\n" +
+    "  color += sample(v_blurSample[5]) * 0.161612;\n" +
+    "  color += sample(v_blurSample[6]) * 0.060680;\n" +
+    "  color += sample(v_blurSample[7]) * 0.013960;\n" +
+    "  return color;\n" +
     "}\n";
   var COMPOSITE_FRAGMENT_SOURCE_BLUR_V9 =
     "varying vec2 v_blurSample[9];\n" +
@@ -1182,30 +1209,26 @@ window.HuesEffect = (function() {
       } else if (varyings >= 15) {
         vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V15;
         fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V15;
-      } else if (varyings >= 9) {
+      } else if (varyings > 9) {
         vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V9;
         fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V9;
-      }
-
-      if (varyings >= 9) {
-        vertexShaderSource =
-          COMPOSITE_VERTEX_SOURCE_HEADER +
-          vertexBlurSource +
-          COMPOSITE_VERTEX_SOURCE_FOOTER;
-        fragmentShaderSource =
-          COMPOSITE_FRAGMENT_SOURCE_HEADER +
-          colorSource +
-          fragmentBlendSource +
-          COMPOSITE_FRAGMENT_SOURCE_SAMPLE +
-          fragmentBlurSource +
-          COMPOSITE_FRAGMENT_SOURCE_FOOTER;
-        self.compositeShader = self.compileOneShader(vertexShaderSource, fragmentShaderSource);
       } else {
-        self.compositeShader = self.compositeNoblurShader;
-
-        console.log("Your GPU doesn't have enough MAX_VARYING_VECTORS to enable blur!");
-        console.log("Either you're running on a potato, or privacy features to resist fingerprinting in your browser are limiting the available capabilities.");
+        vertexBlurSource = COMPOSITE_VERTEX_SOURCE_BLUR_V8;
+        fragmentBlurSource = COMPOSITE_FRAGMENT_SOURCE_BLUR_V8;
       }
+
+      vertexShaderSource =
+        COMPOSITE_VERTEX_SOURCE_HEADER +
+        vertexBlurSource +
+        COMPOSITE_VERTEX_SOURCE_FOOTER;
+      fragmentShaderSource =
+        COMPOSITE_FRAGMENT_SOURCE_HEADER +
+        colorSource +
+        fragmentBlendSource +
+        COMPOSITE_FRAGMENT_SOURCE_SAMPLE +
+        fragmentBlurSource +
+        COMPOSITE_FRAGMENT_SOURCE_FOOTER;
+      self.compositeShader = self.compileOneShader(vertexShaderSource, fragmentShaderSource);
 
       self.shaderRecompileNeeded = false;
     },
