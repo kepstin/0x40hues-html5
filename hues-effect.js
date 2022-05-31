@@ -740,6 +740,8 @@ window.HuesEffect = (function() {
           self.canvasClientHeight != self.newCanvasClientHeight) {
 	var ratio = window.devicePixelRatio || 1;
         console.log("Updating canvas size: " + self.canvasClientWidth + "x" + self.canvasClientHeight + " to " + self.newCanvasClientWidth + "x" + self.newCanvasClientHeight);
+        canvas.width = self.newCanvasClientWidth;
+        canvas.height = self.newCanvasClientHeight;
         self.canvasClientWidth = self.newCanvasClientWidth;
         self.canvasClientHeight = self.newCanvasClientHeight;
 
