@@ -739,9 +739,7 @@ window.HuesEffect = (function() {
       if (self.canvasClientWidth != self.newCanvasClientWidth ||
           self.canvasClientHeight != self.newCanvasClientHeight) {
 	var ratio = window.devicePixelRatio || 1;
-        console.log("Updating canvas size: " + self.canvasClientWidth + "x" + self.canvasClientHeight + " to " + self.newCanvasClientWidth + "x" + self.newCanvasClientHeight + " (" + ratio + " dev px per px)");
-        canvas.width = Math.round(self.newCanvasClientWidth * ratio);
-        canvas.height = Math.round(self.newCanvasClientHeight * ratio);
+        console.log("Updating canvas size: " + self.canvasClientWidth + "x" + self.canvasClientHeight + " to " + self.newCanvasClientWidth + "x" + self.newCanvasClientHeight);
         self.canvasClientWidth = self.newCanvasClientWidth;
         self.canvasClientHeight = self.newCanvasClientHeight;
 
