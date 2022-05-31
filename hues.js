@@ -254,6 +254,19 @@
        */
       shortblackouteffect: [],
 
+      /* callback shortwhiteouteffect(beatTime, duration)
+       * Called on the start of the short whiteout "!" beat effect, with the
+       * information required to time the short whiteout correctly.
+       * This is called from beat analysis (in request animation frame context)
+       * prior to the beat callback.
+       *
+       * beatTime: The timestamp of the beat that the short whiteout occurred
+       *   on.
+       * duration: The length of the short whiteout. (This is less than the
+       *   length of a beat.)
+       */
+      shortwhiteouteffect: [],
+
       /* callback fadehueeffect(beatTime, duration, startHue, endHue)
        * Called on the start of any of the hue fade effects, with the
        * information needed to time the effect correctly.
