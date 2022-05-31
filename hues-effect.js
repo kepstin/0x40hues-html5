@@ -269,16 +269,6 @@ window.HuesEffect = (function() {
     "  vec4 hl = hard_light(sample, color, 0.7);\n" +
     "  return vec4(hl.rgb + color * (1.0 - hl.a), 1.0);\n" +
     "}\n";
-  var COMPOSITE_FRAGMENT_SOURCE_NOVIGNETTE =
-    "vec4 vignette(vec4 sample) {\n" +
-    "  return sample;\n" +
-    "}\n";
-  var COMPOSITE_FRAGMENT_SOURCE_VIGNETTE =
-    "uniform sampler2D u_vignetteImage;\n" +
-    "varying vec2 v_vignetteSample;\n" +
-    "vec4 vignette(vec4 sample) {\n" +
-    "  return sample * texture2D(u_vignetteImage, v_vignetteSample);\n" +
-    "}\n";
 
   var COMPOSITE_FRAGMENT_SOURCE_FOOTER =
     "vec4 blackout(vec4 sample) {\n" +
