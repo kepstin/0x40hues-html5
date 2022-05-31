@@ -1718,6 +1718,9 @@
      *   Blackout fades in over the course of ~2 frames in the flash
      *   (+0.4 alpha per frame), this works out to be about 40ms at 60fps.
      *   There's no fade-out, the blackout ends instantly.
+     * "¤": Whiteout
+     *   Same as +, but with white rather than black. All the timers, etc.,
+     *   are shared with blackout.
      * "|": Short blackout
      *   A blackout that only covers part of a single beat.
      *   It changes the color and image, but it does not do any blur.
@@ -1725,10 +1728,16 @@
      *   Note that due to the fade-in, the new image and color are visible for
      *   a couple of frames at the start of the effect.
      *   The length of the blackout is 1/1.7 of the beat length.
+     * "!": Short whiteout
+     *   Same as |, but with white rather than black.
      * ":": Color only
      * "*": Image only
      * "X": Vertical blur only
      * "O": Horizontal blur only
+     * ")": Trippy circle in and change image
+     * "(": Trippy circle out and change image
+     * ">": Trippy circle in
+     * "<": Trippy circle out
      * "~": Fade color
      *   Color change only.
      *   Instead of being immediate, the color is faded from the previous
@@ -1742,11 +1751,13 @@
      *   Toggles between normal and inverted states.
      * "I": Invert & change image
      *   Same as "i", bit in addition the image is changed.
-     * "¤": Whiteout (undocumented effect)
-     *   Same as +, but with white rather than black. All the timers, etc.,
-     *   are shared with blackout.
-     * ")": In circle (HTML hues extension)
-     * "(": Out circle (HTML hues extension)
+     * "s": Horizontal slice (not implemented)
+     * "S": Horizontal slice and change image (not implemented)
+     * "v": Vertical slice (not implemented)
+     * "V": Vertical slice and change image (not implemented)
+     * "#": Double slice (not implemented)
+     * "@": Double slice and change image (not implemented)
+     * "←", "↓", "↑", "→": Shutter (not implemented)
      */
 
     /* Effects that cause vertical blur */
@@ -1769,7 +1780,9 @@
     if (self.autoMode == 2 && (
           current == "x" || current == "o" ||
           current == "-" || current == "|" || current == "*" ||
-          current == "=" || current == "I")) {
+          current == "(" || current == ")" ||
+          current == "=" || current == "I" ||
+          current == "S" || current == "V" || current == "@")) {
       randomImage();
     }
 
@@ -1785,8 +1798,12 @@
 
     /* Short blackout */
     if (current == "|") {
-      self.callEventListeners("shortblackouteffect", beat.time,
-          self.beatDuration / 1.7);
+      self.callEventListeners("shortblackouteffect", beat.time, self.beatDuration / 1.7);
+    }
+
+    /* Short whiteout */
+    if (current == "!") {
+      self.callEventListeners("shortwhiteouteffect", beat.time, self.beatDuration / 1.7);
     }
 
     /* Fade color */
@@ -1808,16 +1825,16 @@
       self.callEventListeners("inverteffect", beat.time, self.inverted);
     }
 
-    /* Out circle */
-    if (current == "("
-        || (self.trippyMode && (current == "x" || current == "X"))) {
-      self.callEventListeners("circleeffect", beat.time, /*in=*/false);
-    }
-
     /* In circle */
-    if (current == ")"
+    if (current == ")" || current == ">"
         || (self.trippyMode && (current == "o" || current == "O"))) {
       self.callEventListeners("circleeffect", beat.time, /*in=*/true);
+    }
+
+    /* Out circle */
+    if (current == "(" || current == "<"
+        || (self.trippyMode && (current == "x" || current == "X"))) {
+      self.callEventListeners("circleeffect", beat.time, /*in=*/false);
     }
 
   };

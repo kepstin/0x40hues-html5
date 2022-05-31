@@ -648,7 +648,7 @@ window.HuesEffect = (function() {
     },
 
     whiteoutEffectCallback: function(whiteoutActive, beatTime) {
-      /* Whiteout is literally blackout, except white. */
+      /* Same as blackout, but white. */
       self.blackoutEffectCallback(whiteoutActive, beatTime);
       self.blackoutColor = [ 1.0, 1.0, 1.0 ];
     },
@@ -665,6 +665,12 @@ window.HuesEffect = (function() {
       self.blackoutStartTime = beatTime;
       self.shortBlackoutDuration = duration;
       self.blackoutColor = [ 0.0, 0.0, 0.0 ];
+    },
+
+    shortWhiteoutEffectCallback: function(beatTime, duration) {
+      /* Same as short blackout, but white. */
+      self.shortBlackoutEffectCallback(beatTime, duration);
+      self.blackoutColor = [ 1.0, 1.0, 1.0 ];
     },
 
     fadeHueEffectCallback: function(beatTime, duration, prevHue, newHue) {
@@ -1266,14 +1272,12 @@ window.HuesEffect = (function() {
       hues.addEventListener("huechange", self.hueChangeCallback);
       hues.addEventListener("imagechange", self.imageChangeCallback);
       hues.addEventListener("songchange", self.songChangeCallback);
-      hues.addEventListener("verticalblureffect",
-          self.verticalBlurEffectCallback);
-      hues.addEventListener("horizontalblureffect",
-          self.horizontalBlurEffectCallback);
+      hues.addEventListener("verticalblureffect", self.verticalBlurEffectCallback);
+      hues.addEventListener("horizontalblureffect", self.horizontalBlurEffectCallback);
       hues.addEventListener("blackouteffect", self.blackoutEffectCallback);
       hues.addEventListener("whiteouteffect", self.whiteoutEffectCallback);
-      hues.addEventListener("shortblackouteffect",
-          self.shortBlackoutEffectCallback);
+      hues.addEventListener("shortblackouteffect", self.shortBlackoutEffectCallback);
+      hues.addEventListener("shortwhiteouteffect", self.shortWhiteoutEffectCallback);
       hues.addEventListener("fadehueeffect", self.fadeHueEffectCallback);
       hues.addEventListener("inverteffect", self.invertEffectCallback);
       hues.addEventListener("circleeffect", self.circleEffectCallback);
